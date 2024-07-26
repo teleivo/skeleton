@@ -1,6 +1,7 @@
 package order_test
 
 import (
+	"math"
 	"strconv"
 	"testing"
 
@@ -65,18 +66,50 @@ func TestTable(t *testing.T) {
 
 	st := order.Table[int, int]{}
 
+	t.Run("Get/EmptyTable", func(t *testing.T) {
+		testKey := 27
+
+		gotValue, gotOk := st.Get(testKey)
+
+		require.Equalsf(t, gotValue, 0, "Get(%d)", testKey)
+		require.Falsef(t, gotOk, "Get(%d)", testKey)
+	})
+
+	t.Run("Contains/EmptyTable", func(t *testing.T) {
+		testKey := 27
+
+		got := st.Contains(testKey)
+
+		require.Falsef(t, got, "Contains(%d)", testKey)
+	})
+
+	t.Run("Min/EmptyTable", func(t *testing.T) {
+		gotKey, gotOk := st.Min()
+
+		require.Equalsf(t, gotKey, 0, "Min()")
+		require.Falsef(t, gotOk, "Min()")
+	})
+
+	wantMin := math.MaxInt
 	for _, test := range tests {
 		t.Run(test.operation+"/"+strconv.Itoa(test.key), func(t *testing.T) {
 			switch test.operation {
 			case "Put":
-				st.Put(test.key, 1)
+				testValue := 1
+
+				st.Put(test.key, testValue)
 
 				gotValue, gotOk := st.Get(test.key)
+				require.Equalsf(t, gotValue, testValue, "Get(%d)", test.key)
 				require.Truef(t, gotOk, "Get(%d)", test.key)
-				require.Equalsf(t, gotValue, 1, "Get(%d)", test.key, 1)
 
-				got := st.Contains(test.key)
-				require.Truef(t, got, "Contains(%d)", test.key)
+				gotOk = st.Contains(test.key)
+				require.Truef(t, gotOk, "Contains(%d)", test.key)
+
+				gotKey, gotOk := st.Min()
+				wantMin = min(wantMin, test.key)
+				require.Equalsf(t, gotKey, wantMin, "Min()")
+				require.Truef(t, gotOk, "Min()")
 			}
 		})
 	}

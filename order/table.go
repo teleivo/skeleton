@@ -1,6 +1,8 @@
 package order
 
-import "cmp"
+import (
+	"cmp"
+)
 
 // Table is an ordered symbol Table as described in the textbook Algorithms, 4th Edition by Robert
 // Sedgewick and Kevin Wayne. A summary of the API can be found in
@@ -19,7 +21,7 @@ type node[K cmp.Ordered, V any] struct {
 	left, right *node[K, V]
 }
 
-// Put associates the given key with the given value.
+// Put associates the given key with the given value. The value of an existing key is updated.
 // TODO allow nil value to delete the key?
 func (ta *Table[K, V]) Put(key K, value V) {
 	ta.root = ta.put(ta.root, key, value)
@@ -56,6 +58,8 @@ func (ta *Table[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
 	return n
 }
 
+// Get returns the value associated with the given key and true if the key was found. The zero value
+// and false is returned if the key was not found.
 func (ta *Table[K, V]) Get(key K) (V, bool) {
 	for n := ta.root; n != nil; {
 		if n.key == key {
@@ -71,9 +75,27 @@ func (ta *Table[K, V]) Get(key K) (V, bool) {
 	return result, false
 }
 
+// Contains returns true if the given key was found and false otherwise.
 func (ta *Table[K, V]) Contains(key K) bool {
 	_, ok := ta.Get(key)
 	return ok
+}
+
+// Min returns the smallest key in the table and true if the table is not empty. The zero value
+// and false is returned if the table is empty.
+func (ta *Table[K, V]) Min() (K, bool) {
+	var result K
+
+	if ta.root == nil {
+		return result, false
+	}
+
+	for x := ta.root; x != nil; {
+		result = x.key
+		x = x.left
+	}
+
+	return result, true
 }
 
 func isRed[K cmp.Ordered, V any](n *node[K, V]) bool {
