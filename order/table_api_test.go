@@ -63,7 +63,7 @@ func TestPutAndGet(t *testing.T) {
 		},
 	}
 
-	st := order.Table{}
+	st := order.Table[int, int]{}
 
 	for _, test := range tests {
 		t.Run(test.operation+"/"+strconv.Itoa(test.key), func(t *testing.T) {

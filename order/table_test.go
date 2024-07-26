@@ -11,19 +11,19 @@ func TestRotationsAndFlip(t *testing.T) {
 	// internals as the node color is important in the LLRB
 	tests := []struct {
 		key  int
-		want *node
+		want *node[int, int]
 	}{
 		{
 			key: 10,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
 			},
 		},
 		{
 			key: 5,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					red: true,
 					key: 5,
 				},
@@ -31,26 +31,26 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 7,
-			want: &node{
+			want: &node[int, int]{
 				key: 7,
-				left: &node{
+				left: &node[int, int]{
 					key: 5,
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 10,
 				},
 			},
 		},
 		{
 			key: 15,
-			want: &node{
+			want: &node[int, int]{
 				key: 7,
-				left: &node{
+				left: &node[int, int]{
 					key: 5,
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 15,
-					left: &node{
+					left: &node[int, int]{
 						red: true,
 						key: 10,
 					},
@@ -59,40 +59,40 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 9,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					red: true,
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						key: 5,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 15,
 				},
 			},
 		},
 		{
 			key: 20,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					red: true,
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						key: 5,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						red: true,
 						key: 15,
 					},
@@ -101,25 +101,25 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 6,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					red: true,
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						key: 6,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 5,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						red: true,
 						key: 15,
 					},
@@ -128,27 +128,27 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 23,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						key: 6,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 5,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						key: 15,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 23,
 					},
 				},
@@ -156,31 +156,31 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 8,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						key: 6,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 5,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 8,
 						},
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						key: 15,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 23,
 					},
 				},
@@ -188,34 +188,34 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 2,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						red: true,
 						key: 5,
-						left: &node{
+						left: &node[int, int]{
 							key: 2,
 						},
-						right: &node{
+						right: &node[int, int]{
 							key: 6,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 8,
 						},
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						key: 15,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 23,
 					},
 				},
@@ -223,38 +223,38 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 3,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					key: 7,
-					left: &node{
+					left: &node[int, int]{
 						red: true,
 						key: 5,
-						left: &node{
+						left: &node[int, int]{
 							key: 3,
-							left: &node{
+							left: &node[int, int]{
 								red: true,
 								key: 2,
 							},
 						},
-						right: &node{
+						right: &node[int, int]{
 							key: 6,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 9,
-						left: &node{
+						left: &node[int, int]{
 							red: true,
 							key: 8,
 						},
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						key: 15,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 23,
 					},
 				},
@@ -262,40 +262,40 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 		{
 			key: 4,
-			want: &node{
+			want: &node[int, int]{
 				key: 10,
-				left: &node{
+				left: &node[int, int]{
 					red: true,
 					key: 5,
-					left: &node{
+					left: &node[int, int]{
 						key: 3,
-						left: &node{
+						left: &node[int, int]{
 							key: 2,
 						},
-						right: &node{
+						right: &node[int, int]{
 							key: 4,
 						},
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 7,
-						left: &node{
+						left: &node[int, int]{
 							key: 6,
 						},
-						right: &node{
+						right: &node[int, int]{
 							key: 9,
-							left: &node{
+							left: &node[int, int]{
 								red: true,
 								key: 8,
 							},
 						},
 					},
 				},
-				right: &node{
+				right: &node[int, int]{
 					key: 20,
-					left: &node{
+					left: &node[int, int]{
 						key: 15,
 					},
-					right: &node{
+					right: &node[int, int]{
 						key: 23,
 					},
 				},
@@ -303,12 +303,12 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 	}
 
-	st := Table{}
+	st := Table[int, int]{}
 
 	for _, test := range tests {
 		st.Put(test.key, 0)
 
-		if diff := cmp.Diff(test.want, st.root, cmp.AllowUnexported(node{})); diff != "" {
+		if diff := cmp.Diff(test.want, st.root, cmp.AllowUnexported(node[int, int]{})); diff != "" {
 			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
 
