@@ -1,7 +1,9 @@
 package order_test
 
 import (
+	"cmp"
 	"math"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -11,61 +13,62 @@ import (
 )
 
 func TestTable(t *testing.T) {
-	tests := []struct {
-		key       int
-		operation string
-	}{
+	type input struct {
+		key   int
+		value string
+	}
+	tests := []input{
 		{
-			key:       10,
-			operation: "Put",
+			key:   10,
+			value: "a",
 		},
 		{
-			key:       5,
-			operation: "Put",
+			key:   5,
+			value: "b",
 		},
 		{
-			key:       7,
-			operation: "Put",
+			key:   7,
+			value: "c",
 		},
 		{
-			key:       15,
-			operation: "Put",
+			key:   15,
+			value: "d",
 		},
 		{
-			key:       9,
-			operation: "Put",
+			key:   9,
+			value: "e",
 		},
 		{
-			key:       20,
-			operation: "Put",
+			key:   20,
+			value: "f",
 		},
 		{
-			key:       6,
-			operation: "Put",
+			key:   6,
+			value: "g",
 		},
 		{
-			key:       23,
-			operation: "Put",
+			key:   23,
+			value: "h",
 		},
 		{
-			key:       8,
-			operation: "Put",
+			key:   8,
+			value: "i",
 		},
 		{
-			key:       2,
-			operation: "Put",
+			key:   2,
+			value: "j",
 		},
 		{
-			key:       3,
-			operation: "Put",
+			key:   3,
+			value: "k",
 		},
 		{
-			key:       4,
-			operation: "Put",
+			key:   4,
+			value: "l",
 		},
 	}
 
-	st := order.Table[int, int]{}
+	st := order.Table[int, string]{}
 
 	t.Run("IsEmtpy/EmtpyTable", func(t *testing.T) {
 		require.Truef(t, st.IsEmpty(), "IsEmpty()")
@@ -76,7 +79,7 @@ func TestTable(t *testing.T) {
 
 		gotValue, gotOk := st.Get(testKey)
 
-		require.Equalsf(t, gotValue, 0, "Get(%d)", testKey)
+		require.Equalsf(t, gotValue, "", "Get(%d)", testKey)
 		require.Falsef(t, gotOk, "Get(%d)", testKey)
 	})
 
@@ -95,29 +98,50 @@ func TestTable(t *testing.T) {
 		require.Falsef(t, gotOk, "Min()")
 	})
 
+	t.Run("DeleteMin/EmptyTable", func(t *testing.T) {
+		gotKey, gotValue, gotOk := st.DeleteMin()
+
+		require.Equalsf(t, gotKey, 0, "DeleteMin()")
+		require.Equalsf(t, gotValue, "", "DeleteMin()")
+		require.Falsef(t, gotOk, "DeleteMin()")
+	})
+
 	wantMin := math.MaxInt
 	for _, test := range tests {
-		t.Run(test.operation+"/"+strconv.Itoa(test.key), func(t *testing.T) {
-			switch test.operation {
-			case "Put":
-				testValue := 1
+		t.Run("Put/"+strconv.Itoa(test.key), func(t *testing.T) {
+			st.Put(test.key, test.value)
 
-				st.Put(test.key, testValue)
+			assert.Falsef(t, st.IsEmpty(), "IsEmpty()")
 
-				assert.Falsef(t, st.IsEmpty(), "IsEmpty()")
+			gotValue, gotOk := st.Get(test.key)
+			require.Equalsf(t, gotValue, test.value, "Get(%d)", test.key)
+			require.Truef(t, gotOk, "Get(%d)", test.key)
 
-				gotValue, gotOk := st.Get(test.key)
-				require.Equalsf(t, gotValue, testValue, "Get(%d)", test.key)
-				require.Truef(t, gotOk, "Get(%d)", test.key)
+			gotOk = st.Contains(test.key)
+			require.Truef(t, gotOk, "Contains(%d)", test.key)
 
-				gotOk = st.Contains(test.key)
-				require.Truef(t, gotOk, "Contains(%d)", test.key)
+			gotKey, gotOk := st.Min()
+			wantMin = min(wantMin, test.key)
+			require.Equalsf(t, gotKey, wantMin, "Min()")
+			require.Truef(t, gotOk, "Min()")
+		})
+	}
 
-				gotKey, gotOk := st.Min()
-				wantMin = min(wantMin, test.key)
-				require.Equalsf(t, gotKey, wantMin, "Min()")
-				require.Truef(t, gotOk, "Min()")
-			}
+	wantMins := make([]input, len(tests))
+	copy(wantMins, tests)
+	slices.SortFunc(wantMins, func(a, b input) int {
+		return cmp.Compare(a.key, b.key)
+	})
+	for _, wantMin := range wantMins {
+		t.Run("DeleteMin/"+strconv.Itoa(wantMin.key), func(t *testing.T) {
+			gotMinKey, gotOk := st.Min()
+			require.Equalsf(t, gotMinKey, wantMin.key, "Min()")
+			require.Truef(t, gotOk, "Min()")
+
+			gotKey, gotValue, gotOk := st.DeleteMin()
+			require.Equalsf(t, gotKey, wantMin.key, "DeleteMin()")
+			require.Equalsf(t, gotValue, wantMin.value, "DeleteMin()")
+			require.Truef(t, gotOk, "DeleteMin()")
 		})
 	}
 }

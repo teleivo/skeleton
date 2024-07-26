@@ -50,17 +50,7 @@ func (ta *Table[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
 		n.right = ta.put(n.right, key, value)
 	}
 
-	if !isRed(n.left) && isRed(n.right) {
-		n = rotateLeft(n)
-	}
-	if isRed(n.left) && isRed(n.left.left) {
-		n = rotateRight(n)
-	}
-	if isRed(n.left) && isRed(n.right) {
-		flipColor(n)
-	}
-
-	return n
+	return fixUp(n)
 }
 
 // Get returns the value associated with the given key and true if the key was found. The zero value
@@ -103,11 +93,66 @@ func (ta *Table[K, V]) Min() (K, bool) {
 	return result, true
 }
 
+// DeleteMin returns the smallest key in the table, its associated value and true if the table is
+// not empty. The zero value for the key and value and false is returned if the table is empty.
+func (ta *Table[K, V]) DeleteMin() (K, V, bool) {
+	if ta.IsEmpty() {
+		var key K
+		var value V
+		return key, value, false
+	}
+
+	root, deleted := ta.deleteMin(ta.root)
+	ta.root = root
+	ta.root.red = false
+
+	return deleted.key, deleted.value, true
+}
+
+func (ta *Table[K, V]) deleteMin(n *node[K, V]) (*node[K, V], *node[K, V]) {
+	if n.left == nil {
+		return nil, n
+	}
+
+	// TODO nil panic?
+	if !isRed(n.left) && !isRed(n.left.left) {
+		n = moveRedLeft(n)
+	}
+
+	left, deleted := ta.deleteMin(n.left)
+	n.left = left
+
+	return fixUp(n), deleted
+}
+
 func isRed[K cmp.Ordered, V any](n *node[K, V]) bool {
 	if n == nil {
 		return false
 	}
 	return n.red
+}
+
+func moveRedLeft[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {
+	flipColor(n)
+	if isRed(n.right.left) {
+		n.right = rotateRight(n)
+		n = rotateLeft(n)
+		flipColor(n)
+	}
+	return n
+}
+
+func fixUp[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {
+	if !isRed(n.left) && isRed(n.right) {
+		n = rotateLeft(n)
+	}
+	if isRed(n.left) && isRed(n.left.left) {
+		n = rotateRight(n)
+	}
+	if isRed(n.left) && isRed(n.right) {
+		flipColor(n)
+	}
+	return n
 }
 
 func rotateLeft[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {

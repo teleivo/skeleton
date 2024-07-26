@@ -3,13 +3,14 @@
 ## Table
 
 * implement LLRB tree
-  * deleteMin()
+  * DeleteMin()
   * implement delete
+  * should Min() also return the value like I do with DeleteMin? or should I not return the value
+  from DeleteMin?
   * could I support keys that implement a `func Less(i, j int) bool` as in https://pkg.go.dev/sort#Interface keys as well while not making it awkward for
   cmp.Ordered types? or maybe a https://pkg.go.dev/time#Time.Compare one as that also exists in
   cmp.Ordered. It would be cool to be able to use time.Time as the key to some value
   * how can I benchmark/test to make sure it is close to perfectly balanced?
-  * isEmpty() bool
   * size() int
   * max() key
   * floor(key)
