@@ -21,6 +21,11 @@ type node[K cmp.Ordered, V any] struct {
 	left, right *node[K, V]
 }
 
+// IsEmpty returns true if the table contains no keys and false otherwise.
+func (ta *Table[K, V]) IsEmpty() bool {
+	return ta.root == nil
+}
+
 // Put associates the given key with the given value. The value of an existing key is updated.
 // TODO allow nil value to delete the key?
 func (ta *Table[K, V]) Put(key K, value V) {

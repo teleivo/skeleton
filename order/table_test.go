@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/skeleton/order"
 )
@@ -66,6 +67,10 @@ func TestTable(t *testing.T) {
 
 	st := order.Table[int, int]{}
 
+	t.Run("IsEmtpy/EmtpyTable", func(t *testing.T) {
+		require.Truef(t, st.IsEmpty(), "IsEmpty()")
+	})
+
 	t.Run("Get/EmptyTable", func(t *testing.T) {
 		testKey := 27
 
@@ -98,6 +103,8 @@ func TestTable(t *testing.T) {
 				testValue := 1
 
 				st.Put(test.key, testValue)
+
+				assert.Falsef(t, st.IsEmpty(), "IsEmpty()")
 
 				gotValue, gotOk := st.Get(test.key)
 				require.Equalsf(t, gotValue, testValue, "Get(%d)", test.key)
