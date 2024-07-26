@@ -1,20 +1,19 @@
 * implement LLRB tree
-  * implement put
-  * implement get
   * implement delete
-  * make generic
-  * contains(key) bool
+  * min() key - also return the value?
+  * deleteMin()
   * implement frequency counter example using data from lecture
+  * could I support keys that implement a `func Less(i, j int) bool` as in https://pkg.go.dev/sort#Interface keys as well while not making it awkward for
+  cmp.Ordered types? or maybe a https://pkg.go.dev/time#Time.Compare one as that also exists in
+  cmp.Ordered. It would be cool to be able to use time.Time as the key to some value
   * how can I benchmark/test to make sure it is close to perfectly balanced?
   * isEmpty() bool
   * size() int
-  * min() key - also return the value?
   * max() key
   * floor(key)
   * ceiling(key)
   * rank(key)
   * select(k int)
-  * deleteMin()
   * deleteMax()
   * size(lo, hi key)
   * keys(lo, hi key) - using Go 1.23 iterator?
