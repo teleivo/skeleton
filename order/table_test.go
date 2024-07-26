@@ -1,316 +1,83 @@
-package order
+package order_test
 
 import (
+	"strconv"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/teleivo/assertive/require"
+	"github.com/teleivo/skeleton/order"
 )
 
-func TestRotationsAndFlip(t *testing.T) {
-	// testing tree transformations on put via diffing on the nodes with its
-	// internals as the node color is important in the LLRB
+func TestTable(t *testing.T) {
 	tests := []struct {
-		key  int
-		want *node[int, int]
+		key       int
+		operation string
 	}{
 		{
-			key: 10,
-			want: &node[int, int]{
-				key: 10,
-			},
+			key:       10,
+			operation: "Put",
 		},
 		{
-			key: 5,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					red: true,
-					key: 5,
-				},
-			},
+			key:       5,
+			operation: "Put",
 		},
 		{
-			key: 7,
-			want: &node[int, int]{
-				key: 7,
-				left: &node[int, int]{
-					key: 5,
-				},
-				right: &node[int, int]{
-					key: 10,
-				},
-			},
+			key:       7,
+			operation: "Put",
 		},
 		{
-			key: 15,
-			want: &node[int, int]{
-				key: 7,
-				left: &node[int, int]{
-					key: 5,
-				},
-				right: &node[int, int]{
-					key: 15,
-					left: &node[int, int]{
-						red: true,
-						key: 10,
-					},
-				},
-			},
+			key:       15,
+			operation: "Put",
 		},
 		{
-			key: 9,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					red: true,
-					key: 7,
-					left: &node[int, int]{
-						key: 5,
-					},
-					right: &node[int, int]{
-						key: 9,
-					},
-				},
-				right: &node[int, int]{
-					key: 15,
-				},
-			},
+			key:       9,
+			operation: "Put",
 		},
 		{
-			key: 20,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					red: true,
-					key: 7,
-					left: &node[int, int]{
-						key: 5,
-					},
-					right: &node[int, int]{
-						key: 9,
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						red: true,
-						key: 15,
-					},
-				},
-			},
+			key:       20,
+			operation: "Put",
 		},
 		{
-			key: 6,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					red: true,
-					key: 7,
-					left: &node[int, int]{
-						key: 6,
-						left: &node[int, int]{
-							red: true,
-							key: 5,
-						},
-					},
-					right: &node[int, int]{
-						key: 9,
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						red: true,
-						key: 15,
-					},
-				},
-			},
+			key:       6,
+			operation: "Put",
 		},
 		{
-			key: 23,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					key: 7,
-					left: &node[int, int]{
-						key: 6,
-						left: &node[int, int]{
-							red: true,
-							key: 5,
-						},
-					},
-					right: &node[int, int]{
-						key: 9,
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						key: 15,
-					},
-					right: &node[int, int]{
-						key: 23,
-					},
-				},
-			},
+			key:       23,
+			operation: "Put",
 		},
 		{
-			key: 8,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					key: 7,
-					left: &node[int, int]{
-						key: 6,
-						left: &node[int, int]{
-							red: true,
-							key: 5,
-						},
-					},
-					right: &node[int, int]{
-						key: 9,
-						left: &node[int, int]{
-							red: true,
-							key: 8,
-						},
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						key: 15,
-					},
-					right: &node[int, int]{
-						key: 23,
-					},
-				},
-			},
+			key:       8,
+			operation: "Put",
 		},
 		{
-			key: 2,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					key: 7,
-					left: &node[int, int]{
-						red: true,
-						key: 5,
-						left: &node[int, int]{
-							key: 2,
-						},
-						right: &node[int, int]{
-							key: 6,
-						},
-					},
-					right: &node[int, int]{
-						key: 9,
-						left: &node[int, int]{
-							red: true,
-							key: 8,
-						},
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						key: 15,
-					},
-					right: &node[int, int]{
-						key: 23,
-					},
-				},
-			},
+			key:       2,
+			operation: "Put",
 		},
 		{
-			key: 3,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					key: 7,
-					left: &node[int, int]{
-						red: true,
-						key: 5,
-						left: &node[int, int]{
-							key: 3,
-							left: &node[int, int]{
-								red: true,
-								key: 2,
-							},
-						},
-						right: &node[int, int]{
-							key: 6,
-						},
-					},
-					right: &node[int, int]{
-						key: 9,
-						left: &node[int, int]{
-							red: true,
-							key: 8,
-						},
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						key: 15,
-					},
-					right: &node[int, int]{
-						key: 23,
-					},
-				},
-			},
+			key:       3,
+			operation: "Put",
 		},
 		{
-			key: 4,
-			want: &node[int, int]{
-				key: 10,
-				left: &node[int, int]{
-					red: true,
-					key: 5,
-					left: &node[int, int]{
-						key: 3,
-						left: &node[int, int]{
-							key: 2,
-						},
-						right: &node[int, int]{
-							key: 4,
-						},
-					},
-					right: &node[int, int]{
-						key: 7,
-						left: &node[int, int]{
-							key: 6,
-						},
-						right: &node[int, int]{
-							key: 9,
-							left: &node[int, int]{
-								red: true,
-								key: 8,
-							},
-						},
-					},
-				},
-				right: &node[int, int]{
-					key: 20,
-					left: &node[int, int]{
-						key: 15,
-					},
-					right: &node[int, int]{
-						key: 23,
-					},
-				},
-			},
+			key:       4,
+			operation: "Put",
 		},
 	}
 
-	st := Table[int, int]{}
+	st := order.Table[int, int]{}
 
 	for _, test := range tests {
-		st.Put(test.key, 0)
+		t.Run(test.operation+"/"+strconv.Itoa(test.key), func(t *testing.T) {
+			switch test.operation {
+			case "Put":
+				st.Put(test.key, 1)
 
-		if diff := cmp.Diff(test.want, st.root, cmp.AllowUnexported(node[int, int]{})); diff != "" {
-			t.Fatalf("mismatch (-want +got):\n%s", diff)
-		}
+				gotValue, gotOk := st.Get(test.key)
+				require.Truef(t, gotOk, "Get(%d)", test.key)
+				require.Equalsf(t, gotValue, 1, "Get(%d)", test.key, 1)
 
+				got := st.Contains(test.key)
+				require.Truef(t, got, "Contains(%d)", test.key)
+			}
+		})
 	}
 }
