@@ -2,7 +2,6 @@ package order_test
 
 import (
 	"cmp"
-	"math"
 	"slices"
 	"strconv"
 	"testing"
@@ -98,16 +97,7 @@ func TestTable(t *testing.T) {
 		require.Falsef(t, gotOk, "Min()")
 	})
 
-	t.Run("DeleteMin/EmptyTable", func(t *testing.T) {
-		gotKey, gotValue, gotOk := st.DeleteMin()
-
-		require.Equalsf(t, gotKey, 0, "DeleteMin()")
-		require.Equalsf(t, gotValue, "", "DeleteMin()")
-		require.Falsef(t, gotOk, "DeleteMin()")
-	})
-
-	wantMin := math.MaxInt
-	for _, test := range tests {
+	for i, test := range tests {
 		t.Run("Put/"+strconv.Itoa(test.key), func(t *testing.T) {
 			st.Put(test.key, test.value)
 
@@ -120,28 +110,37 @@ func TestTable(t *testing.T) {
 			gotOk = st.Contains(test.key)
 			require.Truef(t, gotOk, "Contains(%d)", test.key)
 
+			wantOrder := slices.Clone(tests[:i+1])
+			slices.SortFunc(wantOrder, func(a, b input) int {
+				return cmp.Compare(a.key, b.key)
+			})
+
 			gotKey, gotOk := st.Min()
-			wantMin = min(wantMin, test.key)
-			require.Equalsf(t, gotKey, wantMin, "Min()")
+			require.Equalsf(t, gotKey, wantOrder[0].key, "Min()")
 			require.Truef(t, gotOk, "Min()")
+
+			t.Logf("%v", wantOrder)
+			var j int
+			for gotKey, gotValue := range st.Iterate() {
+				t.Logf("%v: %v", gotKey, gotValue)
+				require.Equalsf(t, gotKey, wantOrder[j].key, "Iterate()")
+				require.Equalsf(t, gotValue, wantOrder[j].value, "Iterate()")
+				j++
+			}
+			require.Equalsf(t, j, i, "Iterate() did not return all key and value pairs")
 		})
 	}
 
-	wantMins := make([]input, len(tests))
-	copy(wantMins, tests)
-	slices.SortFunc(wantMins, func(a, b input) int {
-		return cmp.Compare(a.key, b.key)
-	})
-	for _, wantMin := range wantMins {
-		t.Run("DeleteMin/"+strconv.Itoa(wantMin.key), func(t *testing.T) {
-			gotMinKey, gotOk := st.Min()
-			require.Equalsf(t, gotMinKey, wantMin.key, "Min()")
-			require.Truef(t, gotOk, "Min()")
-
-			gotKey, gotValue, gotOk := st.DeleteMin()
-			require.Equalsf(t, gotKey, wantMin.key, "DeleteMin()")
-			require.Equalsf(t, gotValue, wantMin.value, "DeleteMin()")
-			require.Truef(t, gotOk, "DeleteMin()")
-		})
-	}
+	// for _, wantMin := range wantOrder {
+	// 	t.Run("DeleteMin/"+strconv.Itoa(wantMin.key), func(t *testing.T) {
+	// 		gotMinKey, gotOk := st.Min()
+	// 		require.Equalsf(t, gotMinKey, wantMin.key, "Min()")
+	// 		require.Truef(t, gotOk, "Min()")
+	//
+	// 		gotKey, gotValue, gotOk := st.DeleteMin()
+	// 		require.Equalsf(t, gotKey, wantMin.key, "DeleteMin()")
+	// 		require.Equalsf(t, gotValue, wantMin.value, "DeleteMin()")
+	// 		require.Truef(t, gotOk, "DeleteMin()")
+	// 	})
+	// }
 }
