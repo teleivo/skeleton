@@ -2,6 +2,7 @@ package order
 
 import (
 	"cmp"
+	"iter"
 )
 
 // Table is an ordered symbol Table as described in the textbook Algorithms, 4th Edition by Robert
@@ -76,6 +77,58 @@ func (ta *Table[K, V]) Contains(key K) bool {
 	return ok
 }
 
+func dfs[K cmp.Ordered, V any](n *node[K, V]) {
+	if n == nil {
+		return
+	}
+
+	if n.left != nil {
+		dfs(n.left)
+	}
+	// n.key
+	if n.right != nil {
+		dfs(n.right)
+	}
+}
+
+// All returns an in order iterator over all key-value pairs.
+func (ta *Table[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		visited := make(map[K]struct{})
+		stack := []*node[K, V]{
+			ta.root,
+		}
+
+		for len(stack) > 0 {
+			x := stack[len(stack)-1]
+
+			if x.left != nil && !isVisited(visited, x.left) {
+				stack = append(stack, x.left)
+				continue
+			}
+
+			visited[x.key] = struct{}{}
+			if !yield(x.key, x.value) {
+				return
+			}
+
+			stack = stack[:len(stack)-1]
+			if x.right != nil {
+				stack = append(stack, x.right)
+			}
+		}
+	}
+}
+
+// isVisited is needed to simplify to use the optimized 'set' with the empty struct value. Due to
+// that optimization I cannot use visited in a boolean expression. This function allows that and
+// combined with the x.left != nil guard simplifies the code and shrinks the number of cases I have
+// to deal with.
+func isVisited[K cmp.Ordered, V any](visited map[K]struct{}, x *node[K, V]) bool {
+	_, ok := visited[x.key]
+	return ok
+}
+
 // Min returns the smallest key in the table and true if the table is not empty. The zero value
 // and false is returned if the table is empty.
 func (ta *Table[K, V]) Min() (K, bool) {
@@ -93,53 +146,11 @@ func (ta *Table[K, V]) Min() (K, bool) {
 	return result, true
 }
 
-// DeleteMin returns the smallest key in the table, its associated value and true if the table is
-// not empty. The zero value for the key and value and false is returned if the table is empty.
-func (ta *Table[K, V]) DeleteMin() (K, V, bool) {
-	if ta.IsEmpty() {
-		var key K
-		var value V
-		return key, value, false
-	}
-
-	root, deleted := ta.deleteMin(ta.root)
-	ta.root = root
-	ta.root.red = false
-
-	return deleted.key, deleted.value, true
-}
-
-func (ta *Table[K, V]) deleteMin(n *node[K, V]) (*node[K, V], *node[K, V]) {
-	if n.left == nil {
-		return nil, n
-	}
-
-	// TODO nil panic?
-	if !isRed(n.left) && !isRed(n.left.left) {
-		n = moveRedLeft(n)
-	}
-
-	left, deleted := ta.deleteMin(n.left)
-	n.left = left
-
-	return fixUp(n), deleted
-}
-
 func isRed[K cmp.Ordered, V any](n *node[K, V]) bool {
 	if n == nil {
 		return false
 	}
 	return n.red
-}
-
-func moveRedLeft[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {
-	flipColor(n)
-	if isRed(n.right.left) {
-		n.right = rotateRight(n)
-		n = rotateLeft(n)
-		flipColor(n)
-	}
-	return n
 }
 
 func fixUp[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {
