@@ -1,9 +1,10 @@
 * add godoc badge
 
-## Table
+## Map
 
 * implement LLRB tree
   * DeleteMin()
+  * keys(lo, hi key)
   * implement delete
   * should Min() also return the value like I do with DeleteMin? or should I not return the value
   from DeleteMin?
@@ -18,9 +19,6 @@
   * rank(key)
   * select(k int)
   * deleteMax()
-  * keys(lo, hi key) - using Go 1.23 iterator?
-  * keys()
-  * finish frequency counter example - document the examples in the readme
   * size(lo, hi key)
   * visualize tree - as in the lecture/paper I would like to visualize the tree on the CLI during
   sorted key insert and random order key insert; ideally with red links showing up as red ;)

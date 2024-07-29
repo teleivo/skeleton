@@ -38,23 +38,24 @@ func run(w io.Writer) error {
 	sc := bufio.NewScanner(f)
 	sc.Split(bufio.ScanWords)
 
-	var total, totalMin int
-	st := order.Map[string, int]{}
+	var total, totalMin, distinct int
+	words := order.Map[string, int]{}
 	for sc.Scan() {
 		word := sc.Text()
 
 		total++
-		if utf8.RuneCount([]byte(word)) >= int(*minChars) {
+		if utf8.RuneCount([]byte(word)) < int(*minChars) {
 			continue
 		}
 		totalMin++
 
-		count, ok := st.Get(word)
+		count, ok := words.Get(word)
 		if !ok {
-			st.Put(word, 1)
+			distinct++
+			words.Put(word, 1)
 		} else {
 			count++
-			st.Put(word, count)
+			words.Put(word, count)
 		}
 	}
 
@@ -62,8 +63,16 @@ func run(w io.Writer) error {
 		return fmt.Errorf("failed to scan words: %v", err)
 	}
 
-	// TODO continue once I have implemented an iterator
-	fmt.Fprintf(w, "%q contains %d words with %d words with at least %d characters", *fileName, total, totalMin, *minChars)
+	fmt.Fprintf(w, "%q contains %d words with %d words with at least %d characters, %d of which are distinct\n", *fileName, total, totalMin, *minChars, distinct)
+	var maxCount int
+	var maxWord string
+	for word, count := range words.All() {
+		if count > maxCount {
+			maxCount = count
+			maxWord = word
+		}
+	}
+	fmt.Fprintf(w, "%q is the most frequently used word, it occurs %d times\n", maxWord, maxCount)
 
 	return nil
 }
