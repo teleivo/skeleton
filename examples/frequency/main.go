@@ -39,7 +39,7 @@ func run(w io.Writer) error {
 	sc.Split(bufio.ScanWords)
 
 	var total, totalMin int
-	st := order.Table[string, int]{}
+	st := order.Map[string, int]{}
 	for sc.Scan() {
 		word := sc.Text()
 

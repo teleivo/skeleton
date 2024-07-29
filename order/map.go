@@ -5,13 +5,13 @@ import (
 	"iter"
 )
 
-// Table is an ordered symbol Table as described in the textbook Algorithms, 4th Edition by Robert
+// Map is an ordered symbol table as described in the textbook Algorithms, 4th Edition by Robert
 // Sedgewick and Kevin Wayne. A summary of the API can be found in
-// https://algs4.cs.princeton.edu/31elementary. Table is implemented as a left-leaning red-black
+// https://algs4.cs.princeton.edu/31elementary. Map is implemented as a left-leaning red-black
 // binary search tree as described in the paper Left-leaning Red-Black Trees by Robert Sedgewick
 // https://sedgewick.io/wp-content/themes/sedgewick/papers/2008LLRB.pdf. All operations are thus
 // guaranteed to run in O(log N) with N number of keys.
-type Table[K cmp.Ordered, V any] struct {
+type Map[K cmp.Ordered, V any] struct {
 	root *node[K, V]
 }
 
@@ -22,19 +22,19 @@ type node[K cmp.Ordered, V any] struct {
 	left, right *node[K, V]
 }
 
-// IsEmpty returns true if the table contains no keys and false otherwise.
-func (ta *Table[K, V]) IsEmpty() bool {
-	return ta.root == nil
+// IsEmpty returns true if the map contains no keys and false otherwise.
+func (m *Map[K, V]) IsEmpty() bool {
+	return m.root == nil
 }
 
 // Put associates the given key with the given value. The value of an existing key is updated.
 // TODO allow nil value to delete the key?
-func (ta *Table[K, V]) Put(key K, value V) {
-	ta.root = ta.put(ta.root, key, value)
-	ta.root.red = false
+func (m *Map[K, V]) Put(key K, value V) {
+	m.root = m.put(m.root, key, value)
+	m.root.red = false
 }
 
-func (ta *Table[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
+func (m *Map[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
 	if n == nil {
 		return &node[K, V]{
 			red:   true,
@@ -46,9 +46,9 @@ func (ta *Table[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
 	if n.key == key {
 		n.value = value
 	} else if n.key > key {
-		n.left = ta.put(n.left, key, value)
+		n.left = m.put(n.left, key, value)
 	} else {
-		n.right = ta.put(n.right, key, value)
+		n.right = m.put(n.right, key, value)
 	}
 
 	return fixUp(n)
@@ -56,8 +56,8 @@ func (ta *Table[K, V]) put(n *node[K, V], key K, value V) *node[K, V] {
 
 // Get returns the value associated with the given key and true if the key was found. The zero value
 // and false is returned if the key was not found.
-func (ta *Table[K, V]) Get(key K) (V, bool) {
-	for n := ta.root; n != nil; {
+func (m *Map[K, V]) Get(key K) (V, bool) {
+	for n := m.root; n != nil; {
 		if n.key == key {
 			return n.value, true
 		} else if n.key > key {
@@ -72,8 +72,8 @@ func (ta *Table[K, V]) Get(key K) (V, bool) {
 }
 
 // Contains returns true if the given key was found and false otherwise.
-func (ta *Table[K, V]) Contains(key K) bool {
-	_, ok := ta.Get(key)
+func (m *Map[K, V]) Contains(key K) bool {
+	_, ok := m.Get(key)
 	return ok
 }
 
@@ -92,11 +92,11 @@ func dfs[K cmp.Ordered, V any](n *node[K, V]) {
 }
 
 // All returns an in order iterator over all key-value pairs.
-func (ta *Table[K, V]) All() iter.Seq2[K, V] {
+func (m *Map[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		visited := make(map[K]struct{})
 		stack := []*node[K, V]{
-			ta.root,
+			m.root,
 		}
 
 		for len(stack) > 0 {
@@ -129,16 +129,16 @@ func isVisited[K cmp.Ordered, V any](visited map[K]struct{}, x *node[K, V]) bool
 	return ok
 }
 
-// Min returns the smallest key in the table and true if the table is not empty. The zero value
-// and false is returned if the table is empty.
-func (ta *Table[K, V]) Min() (K, bool) {
+// Min returns the smallest key in the map and true if the map is not empty. The zero value and
+// false is returned if the map is empty.
+func (m *Map[K, V]) Min() (K, bool) {
 	var result K
 
-	if ta.root == nil {
+	if m.root == nil {
 		return result, false
 	}
 
-	for x := ta.root; x != nil; {
+	for x := m.root; x != nil; {
 		result = x.key
 		x = x.left
 	}

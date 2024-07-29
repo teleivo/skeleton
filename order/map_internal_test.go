@@ -303,7 +303,7 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 	}
 
-	st := Table[int, int]{}
+	st := Map[int, int]{}
 
 	for _, test := range tests {
 		st.Put(test.key, 0)

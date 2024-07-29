@@ -11,7 +11,7 @@ import (
 	"github.com/teleivo/skeleton/order"
 )
 
-func TestTable(t *testing.T) {
+func TestMap(t *testing.T) {
 	type input struct {
 		key   int
 		value string
@@ -67,13 +67,13 @@ func TestTable(t *testing.T) {
 		},
 	}
 
-	st := order.Table[int, string]{}
+	st := order.Map[int, string]{}
 
-	t.Run("IsEmtpy/EmtpyTable", func(t *testing.T) {
+	t.Run("IsEmtpy/EmtpyMap", func(t *testing.T) {
 		require.Truef(t, st.IsEmpty(), "IsEmpty()")
 	})
 
-	t.Run("Get/EmptyTable", func(t *testing.T) {
+	t.Run("Get/EmptyMap", func(t *testing.T) {
 		testKey := 27
 
 		gotValue, gotOk := st.Get(testKey)
@@ -82,7 +82,7 @@ func TestTable(t *testing.T) {
 		require.Falsef(t, gotOk, "Get(%d)", testKey)
 	})
 
-	t.Run("Contains/EmptyTable", func(t *testing.T) {
+	t.Run("Contains/EmptyMap", func(t *testing.T) {
 		testKey := 27
 
 		got := st.Contains(testKey)
@@ -90,7 +90,7 @@ func TestTable(t *testing.T) {
 		require.Falsef(t, got, "Contains(%d)", testKey)
 	})
 
-	t.Run("Min/EmptyTable", func(t *testing.T) {
+	t.Run("Min/EmptyMap", func(t *testing.T) {
 		gotKey, gotOk := st.Min()
 
 		require.Equalsf(t, gotKey, 0, "Min()")
