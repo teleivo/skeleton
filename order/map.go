@@ -91,7 +91,7 @@ func dfs[K cmp.Ordered, V any](n *node[K, V]) {
 	}
 }
 
-// All returns an in order iterator over all key-value pairs.
+// All returns an in iterator iterating in ascending order over all key-value pairs.
 func (m *Map[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		visited := make(map[K]struct{})
