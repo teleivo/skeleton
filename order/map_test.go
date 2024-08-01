@@ -69,7 +69,7 @@ func TestMap(t *testing.T) {
 
 	st := order.Map[int, string]{}
 
-	t.Run("IsEmtpy/EmtpyMap", func(t *testing.T) {
+	t.Run("IsEmpty/EmptyMap", func(t *testing.T) {
 		require.Truef(t, st.IsEmpty(), "IsEmpty()")
 	})
 
