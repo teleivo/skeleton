@@ -146,11 +146,53 @@ func (m *Map[K, V]) Min() (K, bool) {
 	return result, true
 }
 
+// DeleteMin returns the smallest key in the map, its associated value and true if the table is
+// not empty. The zero value for the key and value and false is returned if the map is empty.
+func (ta *Map[K, V]) DeleteMin() (K, V, bool) {
+	if ta.IsEmpty() {
+		var key K
+		var value V
+		return key, value, false
+	}
+
+	root, deleted := ta.deleteMin(ta.root)
+	ta.root = root
+	ta.root.red = false
+
+	return deleted.key, deleted.value, true
+}
+
+func (ta *Map[K, V]) deleteMin(n *node[K, V]) (*node[K, V], *node[K, V]) {
+	if n.left == nil {
+		return nil, n
+	}
+
+	// TODO nil panic?
+	if !isRed(n.left) && !isRed(n.left.left) {
+		n = moveRedLeft(n)
+	}
+
+	left, deleted := ta.deleteMin(n.left)
+	n.left = left
+
+	return fixUp(n), deleted
+}
+
 func isRed[K cmp.Ordered, V any](n *node[K, V]) bool {
 	if n == nil {
 		return false
 	}
 	return n.red
+}
+
+func moveRedLeft[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {
+	flipColor(n)
+	if isRed(n.right.left) {
+		n.right = rotateRight(n)
+		n = rotateLeft(n)
+		flipColor(n)
+	}
+	return n
 }
 
 func fixUp[K cmp.Ordered, V any](n *node[K, V]) *node[K, V] {

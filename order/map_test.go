@@ -97,6 +97,14 @@ func TestMap(t *testing.T) {
 		require.Falsef(t, gotOk, "Min()")
 	})
 
+	t.Run("DeleteMin/EmptyTable", func(t *testing.T) {
+		gotKey, gotValue, gotOk := st.DeleteMin()
+
+		require.Equalsf(t, gotKey, 0, "DeleteMin()")
+		require.Equalsf(t, gotValue, "", "DeleteMin()")
+		require.Falsef(t, gotOk, "DeleteMin()")
+	})
+
 	for i, test := range tests {
 		t.Run("Put/"+strconv.Itoa(test.Key), func(t *testing.T) {
 			st.Put(test.Key, test.Value)
@@ -124,6 +132,23 @@ func TestMap(t *testing.T) {
 				got = append(got, input{Key: key, Value: value})
 			}
 			require.EqualValuesf(t, got, wantOrder, "All()")
+		})
+	}
+
+	wantMins := slices.Clone(tests)
+	slices.SortFunc(wantMins, func(a, b input) int {
+		return cmp.Compare(a.Key, b.Key)
+	})
+	for _, wantMin := range wantMins {
+		t.Run("DeleteMin/"+strconv.Itoa(wantMin.Key), func(t *testing.T) {
+			gotMinKey, gotOk := st.Min()
+			require.Equalsf(t, gotMinKey, wantMin.Key, "Min()")
+			require.Truef(t, gotOk, "Min()")
+
+			gotKey, gotValue, gotOk := st.DeleteMin()
+			require.Equalsf(t, gotKey, wantMin.Key, "DeleteMin()")
+			require.Equalsf(t, gotValue, wantMin.Value, "DeleteMin()")
+			require.Truef(t, gotOk, "DeleteMin()")
 		})
 	}
 }
