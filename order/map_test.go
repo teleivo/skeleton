@@ -67,88 +67,88 @@ func TestMap(t *testing.T) {
 		},
 	}
 
-	st := order.Map[int, string]{}
+	t.Run("EmptyMap", func(t *testing.T) {
+		m := order.Map[int, string]{}
 
-	t.Run("IsEmpty/EmptyMap", func(t *testing.T) {
-		require.Truef(t, st.IsEmpty(), "IsEmpty()")
-	})
+		assert.Truef(t, m.IsEmpty(), "IsEmpty()")
 
-	t.Run("Get/EmptyMap", func(t *testing.T) {
 		testKey := 27
 
-		gotValue, gotOk := st.Get(testKey)
+		gotValue, gotOk := m.Get(testKey)
 
-		require.Equalsf(t, gotValue, "", "Get(%d)", testKey)
-		require.Falsef(t, gotOk, "Get(%d)", testKey)
+		assert.Equalsf(t, gotValue, "", "Get(%d)", testKey)
+		assert.Falsef(t, gotOk, "Get(%d)", testKey)
+
+		got := m.Contains(testKey)
+
+		assert.Falsef(t, got, "Contains(%d)", testKey)
+
+		gotKey, gotOk := m.Min()
+
+		assert.Equalsf(t, gotKey, 0, "Min()")
+		assert.Falsef(t, gotOk, "Min()")
+
+		gotKey, gotValue, gotOk = m.DeleteMin()
+
+		assert.Equalsf(t, gotKey, 0, "DeleteMin()")
+		assert.Equalsf(t, gotValue, "", "DeleteMin()")
+		assert.Falsef(t, gotOk, "DeleteMin()")
 	})
 
-	t.Run("Contains/EmptyMap", func(t *testing.T) {
-		testKey := 27
+	t.Run("Put", func(t *testing.T) {
+		m := order.Map[int, string]{}
+		for i, test := range tests {
+			t.Run(strconv.Itoa(test.Key), func(t *testing.T) {
+				m.Put(test.Key, test.Value)
 
-		got := st.Contains(testKey)
+				assert.Falsef(t, m.IsEmpty(), "IsEmpty()")
 
-		require.Falsef(t, got, "Contains(%d)", testKey)
-	})
+				gotValue, gotOk := m.Get(test.Key)
+				require.Equalsf(t, gotValue, test.Value, "Get(%d)", test.Key)
+				require.Truef(t, gotOk, "Get(%d)", test.Key)
 
-	t.Run("Min/EmptyMap", func(t *testing.T) {
-		gotKey, gotOk := st.Min()
+				gotOk = m.Contains(test.Key)
+				require.Truef(t, gotOk, "Contains(%d)", test.Key)
 
-		require.Equalsf(t, gotKey, 0, "Min()")
-		require.Falsef(t, gotOk, "Min()")
-	})
+				wantOrder := slices.Clone(tests[:i+1])
+				slices.SortFunc(wantOrder, func(a, b input) int {
+					return cmp.Compare(a.Key, b.Key)
+				})
 
-	t.Run("DeleteMin/EmptyTable", func(t *testing.T) {
-		gotKey, gotValue, gotOk := st.DeleteMin()
+				gotKey, gotOk := m.Min()
+				require.Equalsf(t, gotKey, wantOrder[0].Key, "Min()")
+				require.Truef(t, gotOk, "Min()")
 
-		require.Equalsf(t, gotKey, 0, "DeleteMin()")
-		require.Equalsf(t, gotValue, "", "DeleteMin()")
-		require.Falsef(t, gotOk, "DeleteMin()")
-	})
-
-	for i, test := range tests {
-		t.Run("Put/"+strconv.Itoa(test.Key), func(t *testing.T) {
-			st.Put(test.Key, test.Value)
-
-			assert.Falsef(t, st.IsEmpty(), "IsEmpty()")
-
-			gotValue, gotOk := st.Get(test.Key)
-			require.Equalsf(t, gotValue, test.Value, "Get(%d)", test.Key)
-			require.Truef(t, gotOk, "Get(%d)", test.Key)
-
-			gotOk = st.Contains(test.Key)
-			require.Truef(t, gotOk, "Contains(%d)", test.Key)
-
-			wantOrder := slices.Clone(tests[:i+1])
-			slices.SortFunc(wantOrder, func(a, b input) int {
-				return cmp.Compare(a.Key, b.Key)
+				got := make([]input, 0, len(tests))
+				for key, value := range m.All() {
+					got = append(got, input{Key: key, Value: value})
+				}
+				require.EqualValuesf(t, got, wantOrder, "All()")
 			})
-
-			gotKey, gotOk := st.Min()
-			require.Equalsf(t, gotKey, wantOrder[0].Key, "Min()")
-			require.Truef(t, gotOk, "Min()")
-
-			got := make([]input, 0, len(tests))
-			for key, value := range st.All() {
-				got = append(got, input{Key: key, Value: value})
-			}
-			require.EqualValuesf(t, got, wantOrder, "All()")
-		})
-	}
-
-	wantMins := slices.Clone(tests)
-	slices.SortFunc(wantMins, func(a, b input) int {
-		return cmp.Compare(a.Key, b.Key)
+		}
 	})
-	for _, wantMin := range wantMins {
-		t.Run("DeleteMin/"+strconv.Itoa(wantMin.Key), func(t *testing.T) {
-			gotMinKey, gotOk := st.Min()
-			require.Equalsf(t, gotMinKey, wantMin.Key, "Min()")
-			require.Truef(t, gotOk, "Min()")
 
-			gotKey, gotValue, gotOk := st.DeleteMin()
-			require.Equalsf(t, gotKey, wantMin.Key, "DeleteMin()")
-			require.Equalsf(t, gotValue, wantMin.Value, "DeleteMin()")
-			require.Truef(t, gotOk, "DeleteMin()")
+	t.Run("DeleteMin", func(t *testing.T) {
+		m := order.Map[int, string]{}
+		for _, test := range tests {
+			m.Put(test.Key, test.Value)
+		}
+
+		wantMins := slices.Clone(tests)
+		slices.SortFunc(wantMins, func(a, b input) int {
+			return cmp.Compare(a.Key, b.Key)
 		})
-	}
+		for _, wantMin := range wantMins {
+			t.Run(strconv.Itoa(wantMin.Key), func(t *testing.T) {
+				gotMinKey, gotOk := m.Min()
+				require.Equalsf(t, gotMinKey, wantMin.Key, "Min()")
+				require.Truef(t, gotOk, "Min()")
+
+				gotKey, gotValue, gotOk := m.DeleteMin()
+				require.Equalsf(t, gotKey, wantMin.Key, "DeleteMin()")
+				require.Equalsf(t, gotValue, wantMin.Value, "DeleteMin()")
+				require.Truef(t, gotOk, "DeleteMin()")
+			})
+		}
+	})
 }
