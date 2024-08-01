@@ -13,57 +13,57 @@ import (
 
 func TestMap(t *testing.T) {
 	type input struct {
-		key   int
-		value string
+		Key   int
+		Value string
 	}
 	tests := []input{
 		{
-			key:   10,
-			value: "a",
+			Key:   10,
+			Value: "a",
 		},
 		{
-			key:   5,
-			value: "b",
+			Key:   5,
+			Value: "b",
 		},
 		{
-			key:   7,
-			value: "c",
+			Key:   7,
+			Value: "c",
 		},
 		{
-			key:   15,
-			value: "d",
+			Key:   15,
+			Value: "d",
 		},
 		{
-			key:   9,
-			value: "e",
+			Key:   9,
+			Value: "e",
 		},
 		{
-			key:   20,
-			value: "f",
+			Key:   20,
+			Value: "f",
 		},
 		{
-			key:   6,
-			value: "g",
+			Key:   6,
+			Value: "g",
 		},
 		{
-			key:   23,
-			value: "h",
+			Key:   23,
+			Value: "h",
 		},
 		{
-			key:   8,
-			value: "i",
+			Key:   8,
+			Value: "i",
 		},
 		{
-			key:   2,
-			value: "j",
+			Key:   2,
+			Value: "j",
 		},
 		{
-			key:   3,
-			value: "k",
+			Key:   3,
+			Value: "k",
 		},
 		{
-			key:   4,
-			value: "l",
+			Key:   4,
+			Value: "l",
 		},
 	}
 
@@ -98,36 +98,32 @@ func TestMap(t *testing.T) {
 	})
 
 	for i, test := range tests {
-		t.Run("Put/"+strconv.Itoa(test.key), func(t *testing.T) {
-			st.Put(test.key, test.value)
+		t.Run("Put/"+strconv.Itoa(test.Key), func(t *testing.T) {
+			st.Put(test.Key, test.Value)
 
 			assert.Falsef(t, st.IsEmpty(), "IsEmpty()")
 
-			gotValue, gotOk := st.Get(test.key)
-			require.Equalsf(t, gotValue, test.value, "Get(%d)", test.key)
-			require.Truef(t, gotOk, "Get(%d)", test.key)
+			gotValue, gotOk := st.Get(test.Key)
+			require.Equalsf(t, gotValue, test.Value, "Get(%d)", test.Key)
+			require.Truef(t, gotOk, "Get(%d)", test.Key)
 
-			gotOk = st.Contains(test.key)
-			require.Truef(t, gotOk, "Contains(%d)", test.key)
+			gotOk = st.Contains(test.Key)
+			require.Truef(t, gotOk, "Contains(%d)", test.Key)
 
 			wantOrder := slices.Clone(tests[:i+1])
 			slices.SortFunc(wantOrder, func(a, b input) int {
-				return cmp.Compare(a.key, b.key)
+				return cmp.Compare(a.Key, b.Key)
 			})
 
 			gotKey, gotOk := st.Min()
-			require.Equalsf(t, gotKey, wantOrder[0].key, "Min()")
+			require.Equalsf(t, gotKey, wantOrder[0].Key, "Min()")
 			require.Truef(t, gotOk, "Min()")
 
-			t.Logf("%v", wantOrder)
-			var j int
-			for gotKey, gotValue := range st.All() {
-				t.Logf("%v: %v", gotKey, gotValue)
-				require.Equalsf(t, gotKey, wantOrder[j].key, "All()")
-				require.Equalsf(t, gotValue, wantOrder[j].value, "All()")
-				j++
+			got := make([]input, 0, len(tests))
+			for key, value := range st.All() {
+				got = append(got, input{Key: key, Value: value})
 			}
-			require.Equalsf(t, j, i+1, "All() did not return all key and value pairs")
+			require.EqualValuesf(t, got, wantOrder, "All()")
 		})
 	}
 }
