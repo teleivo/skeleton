@@ -3,6 +3,7 @@
 ## Map
 
 * implement LLRB tree
+  * serialize the tree to a .dot file so I can debug the state at any time
   * DeleteMin()
   * write an invariant assertion function I can run on a LLRB
   * implement Delete
