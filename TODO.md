@@ -4,6 +4,7 @@
 
 * implement LLRB tree
   * DeleteMin()
+  * write an invariant assertion function I can run on a LLRB
   * implement Delete
   * should Min() also return the value like I do with DeleteMin? or should I not return the value
   from DeleteMin? With Min() you can Get() the value if needed, with DeleteMin() you could not
@@ -28,6 +29,7 @@
 * testing
   * fix assertive - make a 0.0.1 release and use that, somehow updating does not work even though I
     did push a fix to the assertion message
+  * look at coverage, did I miss any of the edge cases? rotations, moves?
   * can I write a fuzz test
   * how can I assert the invariants? how to assert in Go like for example in Java, then run it for
   example using a fuzz test so that I get the input that fails the invariant?
