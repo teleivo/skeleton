@@ -303,14 +303,13 @@ func TestRotationsAndFlip(t *testing.T) {
 		},
 	}
 
-	st := Map[int, int]{}
+	m := Map[int, int]{}
 
 	for _, test := range tests {
-		st.Put(test.key, 0)
+		m.Put(test.key, 0)
 
-		if diff := cmp.Diff(test.want, st.root, cmp.AllowUnexported(node[int, int]{})); diff != "" {
+		if diff := cmp.Diff(test.want, m.root, cmp.AllowUnexported(node[int, int]{})); diff != "" {
 			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
-
 	}
 }
