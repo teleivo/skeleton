@@ -151,6 +151,16 @@ func (m *Map[K, V]) Min() (K, bool) {
 func (m Map[K, V]) RenderDot(w io.Writer) {
 	fmt.Fprint(w, "strict digraph {\n")
 
+	if m.IsEmpty() {
+		fmt.Fprint(w, "}")
+		return
+	}
+
+	if m.root.left == nil && m.root.right == nil {
+		fmt.Fprintf(w, "\t%v\n}", m.root.key)
+		return
+	}
+
 	visited := make(map[K]struct{})
 	stack := [][2]*node[K, V]{
 		{m.root, nil},

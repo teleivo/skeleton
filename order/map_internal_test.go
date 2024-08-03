@@ -5,55 +5,69 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/teleivo/assertive/require"
+	"github.com/teleivo/assertive/assert"
 )
 
 func TestRenderDot(t *testing.T) {
-	m := Map[int, int]{
-		root: &node[int, int]{
-			key: 10,
-			left: &node[int, int]{
-				red: true,
-				key: 5,
-				left: &node[int, int]{
-					key: 3,
+	tests := []struct {
+		in   Map[int, int]
+		want string
+	}{
+		{
+			in: Map[int, int]{},
+			want: `strict digraph {
+}`,
+		},
+		{
+			in: Map[int, int]{
+				root: &node[int, int]{key: 10},
+			},
+			want: `strict digraph {
+	10
+}`,
+		},
+		{
+			in: Map[int, int]{
+				root: &node[int, int]{
+					key: 10,
 					left: &node[int, int]{
-						key: 2,
-					},
-					right: &node[int, int]{
-						key: 4,
-					},
-				},
-				right: &node[int, int]{
-					key: 7,
-					left: &node[int, int]{
-						key: 6,
-					},
-					right: &node[int, int]{
-						key: 9,
+						red: true,
+						key: 5,
 						left: &node[int, int]{
-							red: true,
-							key: 8,
+							key: 3,
+							left: &node[int, int]{
+								key: 2,
+							},
+							right: &node[int, int]{
+								key: 4,
+							},
+						},
+						right: &node[int, int]{
+							key: 7,
+							left: &node[int, int]{
+								key: 6,
+							},
+							right: &node[int, int]{
+								key: 9,
+								left: &node[int, int]{
+									red: true,
+									key: 8,
+								},
+							},
+						},
+					},
+					right: &node[int, int]{
+						key: 20,
+						left: &node[int, int]{
+							key: 15,
+						},
+						right: &node[int, int]{
+							key: 23,
 						},
 					},
 				},
 			},
-			right: &node[int, int]{
-				key: 20,
-				left: &node[int, int]{
-					key: 15,
-				},
-				right: &node[int, int]{
-					key: 23,
-				},
-			},
-		},
-	}
-
-	var b bytes.Buffer
-	m.RenderDot(&b)
-
-	want := `strict digraph {
+			want: `strict digraph {
 	3 -> 2 [label="L"]
 	5 -> 3 [label="L"]
 	3 -> 4 [label="R"]
@@ -65,8 +79,17 @@ func TestRenderDot(t *testing.T) {
 	20 -> 15 [label="L"]
 	10 -> 20 [label="R"]
 	20 -> 23 [label="R"]
-}`
-	require.EqualValues(t, b.String(), want)
+}`,
+		},
+	}
+
+	for _, test := range tests {
+		var got bytes.Buffer
+
+		test.in.RenderDot(&got)
+
+		assert.EqualValues(t, got.String(), test.want)
+	}
 }
 
 func TestRotationsAndFlip(t *testing.T) {
