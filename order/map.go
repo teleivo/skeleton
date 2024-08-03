@@ -2,6 +2,8 @@ package order
 
 import (
 	"cmp"
+	"fmt"
+	"io"
 	"iter"
 )
 
@@ -144,6 +146,51 @@ func (m *Map[K, V]) Min() (K, bool) {
 	}
 
 	return result, true
+}
+
+func (m Map[K, V]) RenderDot(w io.Writer) {
+	fmt.Fprint(w, "strict digraph {\n")
+
+	visited := make(map[K]struct{})
+	stack := [][2]*node[K, V]{
+		{m.root, nil},
+	}
+
+	for len(stack) > 0 {
+		x := stack[len(stack)-1][0]
+
+		if x.left != nil && !isVisited(visited, x.left) {
+			stack = append(stack, [2]*node[K, V]{x.left, x})
+			continue
+		}
+
+		visited[x.key] = struct{}{}
+		parent := stack[len(stack)-1][1]
+		drawEdge(w, parent, x)
+
+		stack = stack[:len(stack)-1]
+		if x.right != nil {
+			stack = append(stack, [2]*node[K, V]{x.right, x})
+		}
+	}
+
+	fmt.Fprint(w, "}")
+}
+
+func drawEdge[K cmp.Ordered, V any](w io.Writer, from, to *node[K, V]) {
+	if from == nil {
+		return
+	}
+
+	label := "R"
+	if from.left == to {
+		label = "L"
+	}
+	var color string
+	if to.red {
+		color = ", color = red"
+	}
+	fmt.Fprintf(w, "\t%v -> %v [label=%q%s]\n", from.key, to.key, label, color)
 }
 
 func isRed[K cmp.Ordered, V any](n *node[K, V]) bool {

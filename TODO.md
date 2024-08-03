@@ -3,7 +3,6 @@
 ## Map
 
 * implement LLRB tree
-  * serialize the tree to a .dot file so I can debug the state at any time
   * DeleteMin()
   * write an invariant assertion function I can run on a LLRB
   * implement Delete
@@ -36,6 +35,45 @@
   example using a fuzz test so that I get the input that fails the invariant?
   * it would be cool to draw the expected tree, use that as the want value in the test assertion and
     show a visual diff if the test fails
+
+* drawing
+  * serialize the tree to a .dot file so I can debug the state at any time
+    * invisible nodes are needed if I wanted the layout to show that the tree is indeed balanced
+    https://forum.graphviz.org/t/how-to-get-trees-more-balanced/966/5
+
+invisible nodes/edges with null links?
+```go
+`
+strict digraph {
+    10 -> 5 [color = red]
+    5 -> 3
+    3 -> 2
+    2 -> "2L" [arrowhead=none]
+    2 -> "2R" [arrowhead=none]
+    "2L" [style=invis]
+    "2R" [style=invis]
+    3 -> 4
+    5 -> 7
+    7 -> 6
+    7 -> 9
+    9 -> 8 [color = red]
+    9 -> "9R" [arrowhead=none]
+    "9R" [style=invis]
+    10 -> 20
+    20 -> 15
+    15 -> "15L" [arrowhead=none]
+    15 -> "15R" [arrowhead=none]
+    "15L" [style=invis]
+    "15R" [style=invis]
+    20 -> 23
+    23 -> "23L" [arrowhead=none]
+    23 -> "23R" [arrowhead=none]
+    "23L" [style=invis]
+    "23R" [style=invis]
+}
+`
+```
+
 
 ## Future data structures
 
