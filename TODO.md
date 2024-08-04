@@ -36,9 +36,10 @@
   * it would be cool to draw the expected tree, use that as the want value in the test assertion and
     show a visual diff if the test fails
 
-* drawing
-  * serialize the tree to a .dot file so I can debug the state at any time
-    * invisible nodes are needed if I wanted the layout to show that the tree is indeed balanced
+* serialize to dot
+  * serialize with string keys: ideally the verb would then be %q so it remains a valid ID https://graphviz.org/doc/info/lang.html#ids
+  * how to serialize the tree in a way that the balance shows
+    invisible nodes are needed if I wanted the layout to show that the tree is indeed balanced
     https://forum.graphviz.org/t/how-to-get-trees-more-balanced/966/5
 
 invisible nodes/edges with null links?
