@@ -26,17 +26,32 @@ func TestLexer(t *testing.T) {
 				{Type: token.Colon, Literal: ":"},
 			},
 		},
-		// "Keywords": {
-		// 	in: "graph Graph strict  Strict\ndigraph\tDigraph",
-		// 	want: []token.Token{
-		// 		{Type: token.Graph, Literal: "graph"},
-		// 		{Type: token.Graph, Literal: "Graph"},
-		// 		{Type: token.Strict, Literal: "strict"},
-		// 		{Type: token.Strict, Literal: "Strict"},
-		// 		{Type: token.Digraph, Literal: "digraph"},
-		// 		{Type: token.Digraph, Literal: "Digraph"},
-		// 	},
-		// },
+		"KeywordsAreCaseInsensitive": {
+			in: " graph Graph strict  Strict\ndigraph\tDigraph Subgraph  subgraph Node node edge Edge \n \t ",
+			want: []token.Token{
+				{Type: token.Graph, Literal: "graph"},
+				{Type: token.Graph, Literal: "Graph"},
+				{Type: token.Strict, Literal: "strict"},
+				{Type: token.Strict, Literal: "Strict"},
+				{Type: token.Digraph, Literal: "digraph"},
+				{Type: token.Digraph, Literal: "Digraph"},
+				{Type: token.Subgraph, Literal: "Subgraph"},
+				{Type: token.Subgraph, Literal: "subgraph"},
+				{Type: token.Node, Literal: "Node"},
+				{Type: token.Node, Literal: "node"},
+				{Type: token.Edge, Literal: "edge"},
+				{Type: token.Edge, Literal: "Edge"},
+			},
+		},
+		// https://graphviz.org/doc/info/lang.html#ids
+		// TODO identifiers can be quoted keywords
+		// 		"Subgraphs": {
+		// 			in: `  A -> {B C}
+		// subgraph {
+		//   rank = same; A; B; C;
+		// }`,
+		// 			want: []token.Token{},
+		// 		},
 	}
 
 	for name, test := range tests {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"iter"
+	"strings"
 	"unicode"
 
 	"github.com/teleivo/skeleton/dot/token"
@@ -58,18 +59,18 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 				tok, err = l.tokenizeRuneAs(token.Semicolon)
 			case '=':
 				tok, err = l.tokenizeRuneAs(token.Equal)
+			default:
+				tok, err = l.tokenizeIdentifier()
 			}
 
 			if !yield(tok, err) {
 				return
 			}
 		}
+		// TODO handle edge operator which is a two character literal
+		// TODO handle illegal runes
 		// TODO handle error that is not io.EOF
 	}
-}
-
-func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
-	return token.Token{Type: tokenType, Literal: string(l.cur)}, nil
 }
 
 func (l *Lexer) skipWhitespace() (err error) {
@@ -80,4 +81,33 @@ func (l *Lexer) skipWhitespace() (err error) {
 
 func isWhitespace(r rune) bool {
 	return unicode.IsSpace(r)
+}
+
+func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
+	return token.Token{Type: tokenType, Literal: string(l.cur)}, nil
+}
+
+func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
+	var tok token.Token
+	var err error
+
+	id := []rune{l.cur}
+	for err = l.readRune(); err == nil && isAlphabetic(l.cur); err = l.readRune() {
+		id = append(id, l.cur)
+	}
+
+	if err != nil {
+		return tok, err
+	}
+
+	literal := string(id)
+	if len(literal) <= token.MaxKeywordLen {
+		literal = strings.ToLower(literal)
+	}
+	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: string(id)}
+	return tok, err
+}
+
+func isAlphabetic(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
