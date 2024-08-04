@@ -1,5 +1,10 @@
 * add godoc badge
 
+## Dot
+
+* move to own repository
+* move lexer into internal
+
 ## Map
 
 * implement LLRB tree
