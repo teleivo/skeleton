@@ -50,14 +50,9 @@ func TestLexer(t *testing.T) {
 				{Type: token.Edge, Literal: "Edge"},
 			},
 		},
-		// TODO EOF isn't handled well for last digit
-		// TODO test invalid identifiers, how does any string not leading with a digit concern
-		// lexing?
-		// TODO test invalid edge operators
 		// TODO lex html string
 		"Identifiers": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47
-			`,
+			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47`,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: `"graph"`},
 				{Type: token.Identifier, Literal: `"strict"`},
@@ -76,12 +71,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "47"},
 			},
 		},
-		// "IdentifiersWithExtendedASCIICharacters": {
-		// 	in: ``,
-		// 	want: []token.Token{
-		// 		{Type: token.Identifier, Literal: "ÇΦ■"},
-		// 	},
-		// },
+		// TODO edge operators directed/undirected
 		// "Subgraphs": {
 		// 	in: `  A -> {B C}
 		// subgraph {
@@ -92,6 +82,10 @@ func TestLexer(t *testing.T) {
 		// 		{Type: token.Identifier, Literal: "A"},
 		// 	},
 		// },
+		// TODO test invalid identifiers, how does any string not leading with a digit concern
+		// lexing?
+		// TODO test invalid edge operators
+		// TODO add hints to some errors like <- did you mean ->
 	}
 
 	for name, test := range tests {
@@ -100,6 +94,7 @@ func TestLexer(t *testing.T) {
 
 			got := make([]token.Token, 0, len(tests))
 			for token, err := range lexer.All() {
+				t.Logf("%+v err %v\n", token, err)
 				assert.NoError(t, err)
 				got = append(got, token)
 			}

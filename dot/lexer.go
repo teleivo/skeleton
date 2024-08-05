@@ -95,13 +95,13 @@ func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 		id = append(id, l.cur)
 	}
 
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return tok, err
 	}
 
 	literal := string(id)
 	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
-	return tok, err
+	return tok, nil
 }
 
 func isIdentifier(r rune) bool {
