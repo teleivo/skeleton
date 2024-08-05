@@ -8,12 +8,19 @@ import (
 	"github.com/teleivo/skeleton/dot/token"
 )
 
+func TestOctal(t *testing.T) {
+	t.Logf("%v %[1]q\n", rune('\200'))
+	t.Logf("%v %[1]q\n", rune('\377'))
+	t.Logf("%O\n", rune('Ç'))
+	t.Logf("%O\n", rune('■'))
+}
+
 func TestLexer(t *testing.T) {
 	tests := map[string]struct {
 		in   string
 		want []token.Token
 	}{
-		"LiteralCharacterTokens": {
+		"LiteralSingleCharacterTokens": {
 			in: "{};=[],:",
 			want: []token.Token{
 				{Type: token.LeftBrace, Literal: "{"},
@@ -43,15 +50,48 @@ func TestLexer(t *testing.T) {
 				{Type: token.Edge, Literal: "Edge"},
 			},
 		},
-		// https://graphviz.org/doc/info/lang.html#ids
-		// TODO identifiers can be quoted keywords
-		// 		"Subgraphs": {
-		// 			in: `  A -> {B C}
+		// TODO EOF isn't handled well for last digit
+		// TODO test invalid identifiers, how does any string not leading with a digit concern
+		// lexing?
+		// TODO test invalid edge operators
+		// TODO lex html string
+		"Identifiers": { // https://graphviz.org/doc/info/lang.html#ids
+			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47
+			`,
+			want: []token.Token{
+				{Type: token.Identifier, Literal: `"graph"`},
+				{Type: token.Identifier, Literal: `"strict"`},
+				{Type: token.Identifier, Literal: `"\"d"`},
+				{Type: token.Identifier, Literal: "_A"},
+				{Type: token.Identifier, Literal: `"_A"`},
+				{Type: token.Identifier, Literal: "A_cZ"},
+				{Type: token.Identifier, Literal: "A10"},
+				{Type: token.Identifier, Literal: "-.9"},
+				{Type: token.Identifier, Literal: `"-.9"`},
+				{Type: token.Identifier, Literal: "-0.13"},
+				{Type: token.Identifier, Literal: "-92"},
+				{Type: token.Identifier, Literal: "-7.3"},
+				{Type: token.Identifier, Literal: `ÿ`},
+				{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
+				{Type: token.Identifier, Literal: "47"},
+			},
+		},
+		// "IdentifiersWithExtendedASCIICharacters": {
+		// 	in: ``,
+		// 	want: []token.Token{
+		// 		{Type: token.Identifier, Literal: "ÇΦ■"},
+		// 	},
+		// },
+		// "Subgraphs": {
+		// 	in: `  A -> {B C}
 		// subgraph {
 		//   rank = same; A; B; C;
 		// }`,
-		// 			want: []token.Token{},
-		// 		},
+		// 	want: []token.Token{
+		// 		{Type: token.Identifier, Literal: "A"},
+		// 		{Type: token.Identifier, Literal: "A"},
+		// 	},
+		// },
 	}
 
 	for name, test := range tests {

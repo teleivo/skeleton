@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"iter"
-	"strings"
 	"unicode"
 
 	"github.com/teleivo/skeleton/dot/token"
@@ -92,7 +91,7 @@ func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 	var err error
 
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && isAlphabetic(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
@@ -101,13 +100,14 @@ func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 	}
 
 	literal := string(id)
-	if len(literal) <= token.MaxKeywordLen {
-		literal = strings.ToLower(literal)
-	}
-	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: string(id)}
+	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
 	return tok, err
 }
 
+func isIdentifier(r rune) bool {
+	return isAlphabetic(r) || r == '_' || r == '-' || r == '.' || r == '"' || r == '\\' || unicode.IsDigit(r)
+}
+
 func isAlphabetic(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }

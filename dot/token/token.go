@@ -1,5 +1,7 @@
 package token
 
+import "strings"
+
 type TokenType string
 
 const (
@@ -29,8 +31,8 @@ type Token struct {
 	Literal string
 }
 
-// MaxKeywordLen is the length of the longest dot keyword which is "subgraph".
-const MaxKeywordLen = 8
+// maxKeywordLen is the length of the longest dot keyword which is "subgraph".
+const maxKeywordLen = len(Subgraph)
 
 var keywords = map[string]TokenType{
 	"digraph":  Digraph,
@@ -42,12 +44,15 @@ var keywords = map[string]TokenType{
 }
 
 // LookupIdentifier returns the token type associated with given identifier which is either a dot
-// keyword or a dot id. This function expects that the input is a valid dot id as specified in
-// https://graphviz.org/doc/info/lang.html#ids.
+// keyword or a dot id. Dot keywords are case-insensitive. This function expects that the input is a
+// valid dot id as specified in https://graphviz.org/doc/info/lang.html#ids.
 func LookupIdentifier(identifier string) TokenType {
-	v, ok := keywords[identifier]
+	if len(identifier) <= maxKeywordLen {
+		identifier = strings.ToLower(identifier)
+	}
+	tokenType, ok := keywords[identifier]
 	if ok {
-		return v
+		return tokenType
 	}
 
 	return Identifier
