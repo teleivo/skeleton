@@ -13,6 +13,10 @@ func TestLexer(t *testing.T) {
 		in   string
 		want []token.Token
 	}{
+		"OnlyWhitespace": {
+			in:   "\t \n \t\t   ",
+			want: []token.Token{},
+		},
 		"LiteralSingleCharacterTokens": {
 			in: "{};=[],:",
 			want: []token.Token{

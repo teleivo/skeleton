@@ -44,7 +44,6 @@ func (l *Lexer) readRune() error {
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
-		// TODO what about errors? and input like `  ` `A` or ` A B`
 		// initialize current and next runes
 		err := l.readRune()
 		fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
