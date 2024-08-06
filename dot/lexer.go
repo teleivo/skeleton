@@ -3,6 +3,7 @@ package dot
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"iter"
 	"unicode"
@@ -11,8 +12,10 @@ import (
 )
 
 type Lexer struct {
-	r   *bufio.Reader
-	cur rune
+	r    *bufio.Reader
+	cur  rune
+	next rune
+	eof  bool
 }
 
 func New(r io.Reader) *Lexer {
@@ -23,21 +26,49 @@ func New(r io.Reader) *Lexer {
 func (l *Lexer) readRune() error {
 	r, _, err := l.r.ReadRune()
 	if err != nil {
-		return err
+		if !errors.Is(err, io.EOF) {
+			return err
+		}
+
+		l.eof = true
+		l.cur = l.next
+		l.next = 0
+		return nil
 	}
 
-	l.cur = r
+	l.cur = l.next
+	l.next = r
 	return nil
 }
 
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
+		// TODO what about errors? and input like `  ` `A` or ` A B`
+		// initialize current and next runes
+		err := l.readRune()
+		fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
+		if errors.Is(err, io.EOF) {
+			return
+		}
+		err = l.readRune()
+		fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
+		if errors.Is(err, io.EOF) {
+			return
+		}
+		fmt.Println("initialized")
+
 		for {
 			var tok token.Token
-			err := l.skipWhitespace()
 
-			if errors.Is(err, io.EOF) {
+			fmt.Println("before skipWhitespace")
+			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
+			err := l.skipWhitespace()
+			fmt.Println("after skipWhitespace")
+			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
+			if err != nil {
+				return
+			} else if l.eof && l.cur == 0 {
 				return
 			}
 
@@ -59,23 +90,41 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 			case '=':
 				tok, err = l.tokenizeRuneAs(token.Equal)
 			default:
-				tok, err = l.tokenizeIdentifier()
+				if l.cur == '-' && (l.next == '>' || l.next == '-') {
+					tok, err = l.tokenizeEdgeOperator()
+				} else {
+					tok, err = l.tokenizeIdentifier()
+					if !yield(tok, err) || l.eof {
+						return
+					}
+					continue
+				}
 			}
 
-			if !yield(tok, err) {
+			if !yield(tok, err) || l.eof {
 				return
 			}
+
+			fmt.Println("before advance")
+			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
+			err = l.readRune()
+			fmt.Println("after advance")
+			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 		}
-		// TODO handle edge operator which is a two character literal
 		// TODO handle illegal runes
 		// TODO handle error that is not io.EOF
 	}
 }
 
 func (l *Lexer) skipWhitespace() (err error) {
-	for err = l.readRune(); err == nil && isWhitespace(l.cur); err = l.readRune() {
+	for isWhitespace(l.cur) {
+		err := l.readRune()
+		if err != nil {
+			return err
+		}
 	}
-	return err
+
+	return nil
 }
 
 func isWhitespace(r rune) bool {
@@ -86,16 +135,29 @@ func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
 	return token.Token{Type: tokenType, Literal: string(l.cur)}, nil
 }
 
+func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
+	err := l.readRune()
+	if l.cur == '-' {
+		return token.Token{Type: token.UndirectedEgde, Literal: token.UndirectedEgde}, err
+	}
+	return token.Token{Type: token.DirectedEgde, Literal: token.DirectedEgde}, err
+}
+
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
+	fmt.Println("tokenizeIdentifier")
 	var tok token.Token
 	var err error
 
+	fmt.Println("before tokenizeIdentifier")
+	fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 	id := []rune{l.cur}
 	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
+	fmt.Println("after tokenizeIdentifier")
+	fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 
-	if err != nil && !errors.Is(err, io.EOF) {
+	if err != nil {
 		return tok, err
 	}
 

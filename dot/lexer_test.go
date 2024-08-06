@@ -8,13 +8,6 @@ import (
 	"github.com/teleivo/skeleton/dot/token"
 )
 
-func TestOctal(t *testing.T) {
-	t.Logf("%v %[1]q\n", rune('\200'))
-	t.Logf("%v %[1]q\n", rune('\377'))
-	t.Logf("%O\n", rune('Ç'))
-	t.Logf("%O\n", rune('■'))
-}
-
 func TestLexer(t *testing.T) {
 	tests := map[string]struct {
 		in   string
@@ -71,20 +64,42 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "47"},
 			},
 		},
-		// TODO edge operators directed/undirected
-		// "Subgraphs": {
-		// 	in: `  A -> {B C}
-		// subgraph {
-		//   rank = same; A; B; C;
-		// }`,
-		// 	want: []token.Token{
-		// 		{Type: token.Identifier, Literal: "A"},
-		// 		{Type: token.Identifier, Literal: "A"},
-		// 	},
-		// },
+		"Subgraphs": {
+			in: `  A -> {B C}
+				D -- E
+			subgraph {
+			  rank = same; A; B; C;
+			}`,
+			want: []token.Token{
+				{Type: token.Identifier, Literal: "A"},
+				{Type: token.DirectedEgde, Literal: "->"},
+				{Type: token.LeftBrace, Literal: "{"},
+				{Type: token.Identifier, Literal: "B"},
+				{Type: token.Identifier, Literal: "C"},
+				{Type: token.RightBrace, Literal: "}"},
+				{Type: token.Identifier, Literal: "D"},
+				{Type: token.UndirectedEgde, Literal: "--"},
+				{Type: token.Identifier, Literal: "E"},
+				{Type: token.Subgraph, Literal: "subgraph"},
+				{Type: token.LeftBrace, Literal: "{"},
+				{Type: token.Identifier, Literal: "rank"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "same"},
+				{Type: token.Semicolon, Literal: ";"},
+				{Type: token.Identifier, Literal: "A"},
+				{Type: token.Semicolon, Literal: ";"},
+				{Type: token.Identifier, Literal: "B"},
+				{Type: token.Semicolon, Literal: ";"},
+				{Type: token.Identifier, Literal: "C"},
+				{Type: token.Semicolon, Literal: ";"},
+				{Type: token.RightBrace, Literal: "}"},
+			},
+		},
 		// TODO test invalid identifiers, how does any string not leading with a digit concern
 		// lexing?
 		// TODO test invalid edge operators
+		// TODO handle EOF differently? I now have multiple places checking for io.EOF would be nice
+		// to mark that in one place
 		// TODO add hints to some errors like <- did you mean ->
 	}
 

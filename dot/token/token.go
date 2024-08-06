@@ -14,6 +14,9 @@ const (
 	Equal        = "="
 	Comma        = ","
 
+	DirectedEgde   = "->"
+	UndirectedEgde = "--"
+
 	Identifier = "identifier"
 
 	// Keywords
