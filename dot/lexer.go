@@ -126,8 +126,14 @@ func (l *Lexer) skipWhitespace() (err error) {
 	return nil
 }
 
+// isWhitespace determines if the rune is considered whitespace. It does not include non-breaking
+// whitespace \240 which is considered whitespace by [unicode.isWhitespace].
 func isWhitespace(r rune) bool {
-	return unicode.IsSpace(r)
+	switch r {
+	case ' ', '\t', '\n':
+		return true
+	}
+	return false
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
@@ -173,7 +179,6 @@ func isAlphabetic(r rune) bool {
 // TODO is this also dependent on the context? as in - is not a separator inside of a quoted string
 // isSeparator determines if the rune separates tokens. This can be terminal tokens or whitespace.
 func isSeparator(r rune) bool {
-	// TODO exclude non-breaking whitespace?
 	return isTerminal(r) || r == '-' || isWhitespace(r)
 }
 
@@ -205,9 +210,11 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 		return tok, err
 	}
 
-	// TODO get the closing quote? error handling
+	// consume closing quote
 	id = append(id, l.cur)
+	// TODO error handling
 	err = l.readRune()
+
 	return token.Token{Type: token.Identifier, Literal: string(id)}, err
 }
 
@@ -251,7 +258,7 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var err error
 
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && l.cur != '"'; err = l.readRune() {
+	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
