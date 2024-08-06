@@ -48,27 +48,32 @@ func TestLexer(t *testing.T) {
 			},
 		},
 		// TODO lex html string
-		"Identifiers": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47
-			"Helvetica,Arial,sans-serif" "#00008844"`,
+		// TODO should I strip the quotes from the literal? or leave that up to the parser?
+		"IdentifiersQuoted": { // https://graphviz.org/doc/info/lang.html#ids
+			in: `"graph" "strict" "\"d" "_A" "-.9" "Helvetica,Arial,sans-serif" "#00008844"`,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: `"graph"`},
 				{Type: token.Identifier, Literal: `"strict"`},
 				{Type: token.Identifier, Literal: `"\"d"`},
-				{Type: token.Identifier, Literal: "_A"},
 				{Type: token.Identifier, Literal: `"_A"`},
+				{Type: token.Identifier, Literal: `"-.9"`},
+				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
+				{Type: token.Identifier, Literal: `"#00008844"`},
+			},
+		},
+		"IdentifiersUnquoted": { // https://graphviz.org/doc/info/lang.html#ids
+			in: `_A A_cZ A10 -.9 -0.13 -92 -7.3 ÿ 100 200 47 `,
+			want: []token.Token{
+				{Type: token.Identifier, Literal: "_A"},
 				{Type: token.Identifier, Literal: "A_cZ"},
 				{Type: token.Identifier, Literal: "A10"},
 				{Type: token.Identifier, Literal: "-.9"},
-				{Type: token.Identifier, Literal: `"-.9"`},
 				{Type: token.Identifier, Literal: "-0.13"},
 				{Type: token.Identifier, Literal: "-92"},
 				{Type: token.Identifier, Literal: "-7.3"},
 				{Type: token.Identifier, Literal: `ÿ`},
 				{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
 				{Type: token.Identifier, Literal: "47"},
-				{Type: token.Identifier, Literal: "Helvetica,Arial,sans-serif"},
-				{Type: token.Identifier, Literal: "#00008844"},
 			},
 		},
 		"AttributeList": {

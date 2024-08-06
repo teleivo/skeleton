@@ -170,20 +170,45 @@ func isAlphabetic(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }
 
+// TODO is this also dependent on the context? as in - is not a separator inside of a quoted string
+// isSeparator determines if the rune separates tokens. This can be terminal tokens or whitespace.
+func isSeparator(r rune) bool {
+	// TODO exclude non-breaking whitespace?
+	return isTerminal(r) || r == '-' || isWhitespace(r)
+}
+
+// isTerminal determines if the rune is considered a terminal token in the dot language. This does
+// not contain edge operators
+func isTerminal(r rune) bool {
+	switch token.TokenType(r) {
+	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
+		return true
+	}
+	return false
+}
+
 func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 
+	// TODO validate the quote is closed
+	// TODO cap looking for missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
+	// TODO how to validate any quotes inside the string are quoted?
+	prev := l.cur
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && (l.cur != '"' || (prev == '\\' && l.cur == '"')); err = l.readRune() {
 		id = append(id, l.cur)
+		prev = l.cur
 	}
 
 	if err != nil {
 		return tok, err
 	}
 
-	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+	// TODO get the closing quote? error handling
+	id = append(id, l.cur)
+	err = l.readRune()
+	return token.Token{Type: token.Identifier, Literal: string(id)}, err
 }
 
 func (l *Lexer) tokenizeHTMLString() (token.Token, error) {
@@ -191,7 +216,7 @@ func (l *Lexer) tokenizeHTMLString() (token.Token, error) {
 	var err error
 
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
@@ -206,8 +231,9 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	var tok token.Token
 	var err error
 
+	// TODO validate every l.cur is a digit
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && unicode.IsDigit(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
@@ -225,7 +251,7 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var err error
 
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && l.cur != '"'; err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
