@@ -143,26 +143,23 @@ func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 }
 
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
-	fmt.Println("tokenizeIdentifier")
-	var tok token.Token
-	var err error
-
-	fmt.Println("before tokenizeIdentifier")
-	fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
-	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
-		id = append(id, l.cur)
+	// TODO should I move this into a func like isIdentifier and check that in the All() loop and
+	// direct to the illegal token case there right away?
+	// TODO should these read until whitespace/eof and check every rune for the valid set of runes
+	// in that particular category?
+	if l.cur == '"' { // double-quoted string
+		return l.tokenizeQuotedString()
+	} else if l.cur == '<' { // HTML string
+		return l.tokenizeHTMLString()
+	} else if l.cur == '-' || l.cur == '.' || unicode.IsDigit(l.cur) { // numeral
+		return l.tokenizeNumeral()
+	} else if isAlphabetic(l.cur) || l.cur == '_' { // any valid string
+		return l.tokenizeUnquotedString()
+	} else {
+		// TODO invalid
+		var tok token.Token
+		return tok, errors.New("invalid token")
 	}
-	fmt.Println("after tokenizeIdentifier")
-	fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
-
-	if err != nil {
-		return tok, err
-	}
-
-	literal := string(id)
-	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
-	return tok, nil
 }
 
 func isIdentifier(r rune) bool {
@@ -171,4 +168,73 @@ func isIdentifier(r rune) bool {
 
 func isAlphabetic(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
+}
+
+func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
+	var tok token.Token
+	var err error
+
+	id := []rune{l.cur}
+	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+		id = append(id, l.cur)
+	}
+
+	if err != nil {
+		return tok, err
+	}
+
+	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+}
+
+func (l *Lexer) tokenizeHTMLString() (token.Token, error) {
+	var tok token.Token
+	var err error
+
+	id := []rune{l.cur}
+	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+		id = append(id, l.cur)
+	}
+
+	if err != nil {
+		return tok, err
+	}
+
+	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+}
+
+func (l *Lexer) tokenizeNumeral() (token.Token, error) {
+	var tok token.Token
+	var err error
+
+	id := []rune{l.cur}
+	for err = l.readRune(); err == nil && unicode.IsDigit(l.cur); err = l.readRune() {
+		id = append(id, l.cur)
+	}
+
+	if err != nil {
+		return tok, err
+	}
+
+	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+}
+
+// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot
+// keyword.
+func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
+	var tok token.Token
+	var err error
+
+	id := []rune{l.cur}
+	for err = l.readRune(); err == nil && isIdentifier(l.cur); err = l.readRune() {
+		id = append(id, l.cur)
+	}
+
+	if err != nil {
+		return tok, err
+	}
+
+	literal := string(id)
+	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
+
+	return tok, err
 }

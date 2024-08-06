@@ -49,7 +49,8 @@ func TestLexer(t *testing.T) {
 		},
 		// TODO lex html string
 		"Identifiers": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47`,
+			in: `"graph" "strict" "\"d" _A "_A" A_cZ A10 -.9 "-.9" -0.13 -92 -7.3 ÿ 100 200 47
+			"Helvetica,Arial,sans-serif" "#00008844"`,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: `"graph"`},
 				{Type: token.Identifier, Literal: `"strict"`},
@@ -66,6 +67,37 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: `ÿ`},
 				{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
 				{Type: token.Identifier, Literal: "47"},
+				{Type: token.Identifier, Literal: "Helvetica,Arial,sans-serif"},
+				{Type: token.Identifier, Literal: "#00008844"},
+			},
+		},
+		"AttributeList": {
+			// 	in: `	graph [
+			// 	labelloc = t
+			// 	fontname = "Helvetica,Arial,sans-serif"
+			// ]
+			// 			edge [arrowhead=none color="#00008844"]  `,
+			in: `	
+					edge [arrowhead=none color="#00008844"]  `,
+			want: []token.Token{
+				// {Type: token.Graph, Literal: "graph"},
+				// {Type: token.LeftBracket, Literal: "["},
+				// {Type: token.Identifier, Literal: "labelloc"},
+				// {Type: token.Equal, Literal: "="},
+				// {Type: token.Identifier, Literal: "t"},
+				// {Type: token.Identifier, Literal: "fontname"},
+				// {Type: token.Equal, Literal: "="},
+				// {Type: token.Identifier, Literal: "Helvetica,Arial,sans-serif"},
+				// {Type: token.RightBracket, Literal: "]"},
+				{Type: token.Edge, Literal: "edge"},
+				{Type: token.LeftBracket, Literal: "["},
+				{Type: token.Identifier, Literal: "arrowhead"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "none"},
+				{Type: token.Identifier, Literal: "color"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "#00008844"},
+				{Type: token.RightBracket, Literal: "]"},
 			},
 		},
 		"Subgraphs": {
