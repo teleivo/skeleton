@@ -23,6 +23,16 @@ func New(r io.Reader) *Lexer {
 	return &lexer
 }
 
+type LexError struct {
+	Line      int    // Line number the error was found.
+	Character int    // Character number the error was found.
+	Reason    string // Reason for the error.
+}
+
+func (le LexError) Error() string {
+	return fmt.Sprintf("%d:%d: %s", le.Line, le.Character, le.Reason)
+}
+
 func (l *Lexer) readRune() error {
 	r, _, err := l.r.ReadRune()
 	if err != nil {

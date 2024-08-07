@@ -1,10 +1,12 @@
 package dot
 
 import (
+	"iter"
 	"strings"
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
+	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/skeleton/dot/token"
 )
 
@@ -12,7 +14,12 @@ func TestLexer(t *testing.T) {
 	tests := map[string]struct {
 		in   string
 		want []token.Token
+		err  error
 	}{
+		"Empty": {
+			in:   "",
+			want: []token.Token{},
+		},
 		"OnlyWhitespace": {
 			in:   "\t \n \t\t   ",
 			want: []token.Token{},
@@ -101,7 +108,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "none"},
 				{Type: token.Identifier, Literal: "color"},
 				{Type: token.Equal, Literal: "="},
-				{Type: token.Identifier, Literal: "#00008844"},
+				{Type: token.Identifier, Literal: `"#00008844"`},
 				{Type: token.RightBracket, Literal: "]"},
 			},
 		},
@@ -155,6 +162,37 @@ func TestLexer(t *testing.T) {
 				got = append(got, token)
 			}
 			assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+		})
+	}
+
+	errorTests := map[string]struct {
+		in  string
+		err error
+	}{
+		"IdentifiersIllegal": { // https://graphviz.org/doc/info/lang.html#ids
+			in: ` ? `,
+			err: LexError{
+				Line:      1,
+				Character: 2,
+				Reason:    `want ... but got "?"`,
+			},
+		},
+	}
+
+	for name, test := range errorTests {
+		t.Run(name, func(t *testing.T) {
+			lexer := New(strings.NewReader(test.in))
+
+			next, stop := iter.Pull2(lexer.All())
+			defer stop()
+
+			_, err, ok := next()
+
+			require.Truef(t, ok, "All() should yield one time")
+			assert.EqualValuesf(t, err, test.err, "All() should return an error")
+
+			_, _, ok = next()
+			require.Falsef(t, ok, "All() should yield exactly one time")
 		})
 	}
 }
