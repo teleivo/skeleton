@@ -32,17 +32,6 @@ func New(r io.Reader) *Lexer {
 	return &lexer
 }
 
-type LexError struct {
-	LineNr      int    // Line number the error was found.
-	CharacterNr int    // Character number the error was found.
-	Character   rune   // Character that caused the error.
-	Reason      string // Reason for the error.
-}
-
-func (le LexError) Error() string {
-	return fmt.Sprintf("%d:%d: %s", le.LineNr, le.CharacterNr, le.Reason)
-}
-
 // TODO support comments (by discarding them)
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
@@ -60,14 +49,10 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 		for {
 			var tok token.Token
 
-			fmt.Println("before skipWhitespace")
-			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 			err := l.skipWhitespace()
-			fmt.Println("after skipWhitespace")
-			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 			if err != nil {
 				return
-			} else if l.eof && l.cur == 0 {
+			} else if !l.hasNext() {
 				return
 			}
 
@@ -152,6 +137,10 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
+func (l *Lexer) hasNext() bool {
+	return !(l.eof && l.cur == 0)
+}
+
 func (l *Lexer) skipWhitespace() (err error) {
 	for isWhitespace(l.cur) {
 		err := l.readRune()
@@ -195,24 +184,40 @@ func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 }
 
 func isStartofIdentifier(r rune) bool {
-	if r == '"' || // double-quoted string
-		r == '<' || // HTML string
-		r == '-' || r == '.' || unicode.IsDigit(r) || // numeral
-		isAlphabetic(r) || r == '_' { // any valid string
+	if isStartOfQuotedString(r) ||
+		isStartOfHTMLString(r) ||
+		isStartOfNumeral(r) ||
+		isStartOfAnyString(r) {
 		return true
 	}
 
 	return false
 }
 
+func isStartOfQuotedString(r rune) bool {
+	return r == '"'
+}
+
+func isStartOfHTMLString(r rune) bool {
+	return r == '<'
+}
+
+func isStartOfNumeral(r rune) bool {
+	return r == '-' || r == '.' || unicode.IsDigit(r)
+}
+
+func isStartOfAnyString(r rune) bool {
+	return r == '_' || isAlphabetic(r)
+}
+
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
-	if l.cur == '"' { // double-quoted string
+	if isStartOfQuotedString(l.cur) {
 		return l.tokenizeQuotedString()
-	} else if l.cur == '<' { // HTML string
+	} else if isStartOfHTMLString(l.cur) {
 		return l.tokenizeHTMLString()
-	} else if l.cur == '-' || l.cur == '.' || unicode.IsDigit(l.cur) { // numeral
+	} else if isStartOfNumeral(l.cur) {
 		return l.tokenizeNumeral()
-	} else if isAlphabetic(l.cur) || l.cur == '_' { // any valid string
+	} else if isStartOfAnyString(l.cur) {
 		return l.tokenizeUnquotedString()
 	}
 
@@ -296,25 +301,35 @@ func (l *Lexer) tokenizeHTMLString() (token.Token, error) {
 }
 
 func (l *Lexer) tokenizeNumeral() (token.Token, error) {
+	fmt.Println("tokenizeNumeral")
 	var tok token.Token
 	var err error
 
-	// TODO validate every l.cur is a digit
-	id := []rune{l.cur}
-
 	if l.cur == '.' && !unicode.IsDigit(l.next) {
 		lexError := l.lexError("`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier")
-		// TODO I want to skip the illegal character but what would I do with this error?
+
+		// TODO read til a valid separator or eof? so I can potentially lex more valid tokens?
 		err = l.readRune()
+		if err != nil {
+			return tok, err
+		}
+
 		return tok, lexError
-	} else if l.cur == '-' && (l.next != '.' || !unicode.IsDigit(l.next)) {
+	} else if l.cur == '-' && (l.next != '.' && !unicode.IsDigit(l.next)) {
 		lexError := l.lexError("`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier")
-		// TODO I want to skip the illegal character but what would I do with this error?
+
+		// TODO read til a valid separator or eof? so I can potentially lex more valid tokens?
 		err = l.readRune()
+		if err != nil {
+			return tok, err
+		}
+
 		return tok, lexError
 	}
 
-	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
+	// TODO validate every l.cur is a digit
+	id := []rune{l.cur}
+	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 
@@ -344,4 +359,15 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
 
 	return tok, err
+}
+
+type LexError struct {
+	LineNr      int    // Line number the error was found.
+	CharacterNr int    // Character number the error was found.
+	Character   rune   // Character that caused the error.
+	Reason      string // Reason for the error.
+}
+
+func (le LexError) Error() string {
+	return fmt.Sprintf("%d:%d: %s", le.LineNr, le.CharacterNr, le.Reason)
 }

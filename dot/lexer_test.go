@@ -1,6 +1,8 @@
 package dot
 
 import (
+	"iter"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -67,19 +69,13 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: `"#00008844"`},
 			},
 		},
-		"IdentifiersUnquoted": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `_A A_cZ A10 -.9 -0.13 -92 -7.3 ÿ 100 200 47 `,
+		"IdentifiersUnquotedString": { // https://graphviz.org/doc/info/lang.html#ids
+			in: `_A A_cZ A10 ÿ `,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: "_A"},
 				{Type: token.Identifier, Literal: "A_cZ"},
 				{Type: token.Identifier, Literal: "A10"},
-				{Type: token.Identifier, Literal: "-.9"},
-				{Type: token.Identifier, Literal: "-0.13"},
-				{Type: token.Identifier, Literal: "-92"},
-				{Type: token.Identifier, Literal: "-7.3"},
 				{Type: token.Identifier, Literal: `ÿ`},
-				{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
-				{Type: token.Identifier, Literal: "47"},
 			},
 		},
 		"AttributeList": {
@@ -226,4 +222,63 @@ G > H
 			}
 		})
 	}
+
+	// https://graphviz.org/doc/info/lang.html#ids
+	t.Run("NumeralIdentifiers", func(t *testing.T) {
+		tests := []struct {
+			in   string
+			want token.Token
+		}{
+			{
+				in:   "-0.13",
+				want: token.Token{Type: token.Identifier, Literal: "-0.13"},
+			},
+			{
+				in:   "0.13",
+				want: token.Token{Type: token.Identifier, Literal: "0.13"},
+			},
+			{
+				in:   "0.",
+				want: token.Token{Type: token.Identifier, Literal: "0."},
+			},
+			{
+				in:   "-0.",
+				want: token.Token{Type: token.Identifier, Literal: "-0."},
+			},
+			{
+				in:   "47",
+				want: token.Token{Type: token.Identifier, Literal: "47"},
+			},
+			{
+				in:   "-92",
+				want: token.Token{Type: token.Identifier, Literal: "-92"},
+			},
+			{
+				in:   " -.9\t\n",
+				want: token.Token{Type: token.Identifier, Literal: "-.9"},
+			},
+			{
+				in:   `100 200 `,
+				want: token.Token{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
+			},
+		}
+
+		for i, test := range tests {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
+				lexer := New(strings.NewReader(test.in))
+				next, stop := iter.Pull2(lexer.All())
+				defer stop()
+
+				got, err, ok := next()
+
+				assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+				assert.NoErrorf(t, err, "All(%q)", test.in)
+				assert.Truef(t, ok, "All(%q)", test.in)
+
+				_, _, ok = next()
+
+				assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+			})
+		}
+	})
 }
