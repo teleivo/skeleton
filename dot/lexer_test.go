@@ -225,60 +225,102 @@ G > H
 
 	// https://graphviz.org/doc/info/lang.html#ids
 	t.Run("NumeralIdentifiers", func(t *testing.T) {
-		tests := []struct {
-			in   string
-			want token.Token
-		}{
-			{
-				in:   "-0.13",
-				want: token.Token{Type: token.Identifier, Literal: "-0.13"},
-			},
-			{
-				in:   "0.13",
-				want: token.Token{Type: token.Identifier, Literal: "0.13"},
-			},
-			{
-				in:   "0.",
-				want: token.Token{Type: token.Identifier, Literal: "0."},
-			},
-			{
-				in:   "-0.",
-				want: token.Token{Type: token.Identifier, Literal: "-0."},
-			},
-			{
-				in:   "47",
-				want: token.Token{Type: token.Identifier, Literal: "47"},
-			},
-			{
-				in:   "-92",
-				want: token.Token{Type: token.Identifier, Literal: "-92"},
-			},
-			{
-				in:   " -.9\t\n",
-				want: token.Token{Type: token.Identifier, Literal: "-.9"},
-			},
-			{
-				in:   `100 200 `,
-				want: token.Token{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
-			},
-		}
+		t.Run("Valid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want token.Token
+			}{
+				{
+					in:   "-0.13",
+					want: token.Token{Type: token.Identifier, Literal: "-0.13"},
+				},
+				{
+					in:   "0.13",
+					want: token.Token{Type: token.Identifier, Literal: "0.13"},
+				},
+				{
+					in:   "0.",
+					want: token.Token{Type: token.Identifier, Literal: "0."},
+				},
+				{
+					in:   "-0.",
+					want: token.Token{Type: token.Identifier, Literal: "-0."},
+				},
+				{
+					in:   "47",
+					want: token.Token{Type: token.Identifier, Literal: "47"},
+				},
+				{
+					in:   "-92",
+					want: token.Token{Type: token.Identifier, Literal: "-92"},
+				},
+				{
+					in:   " -.9\t\n",
+					want: token.Token{Type: token.Identifier, Literal: "-.9"},
+				},
+				{
+					in:   `100 200 `,
+					want: token.Token{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
+				},
+			}
 
-		for i, test := range tests {
-			t.Run(strconv.Itoa(i), func(t *testing.T) {
-				lexer := New(strings.NewReader(test.in))
-				next, stop := iter.Pull2(lexer.All())
-				defer stop()
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
 
-				got, err, ok := next()
+					got, err, ok := next()
 
-				assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
-				assert.NoErrorf(t, err, "All(%q)", test.in)
-				assert.Truef(t, ok, "All(%q)", test.in)
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assert.NoErrorf(t, err, "All(%q)", test.in)
+					assert.Truef(t, ok, "All(%q)", test.in)
 
-				_, _, ok = next()
+					_, _, ok = next()
 
-				assert.Falsef(t, ok, "All(%q) want only one token", test.in)
-			})
-		}
+					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+				})
+			}
+		})
+
+		t.Run("Invalid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want LexError
+			}{
+				{
+					in: "\n. 0",
+					want: LexError{
+						LineNr:      2,
+						CharacterNr: 1,
+						Character:   '.',
+						Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
+					},
+				},
+				{
+					in: "\n\n\n\t  - F",
+					want: LexError{
+						LineNr:      4,
+						CharacterNr: 4,
+						Character:   '-',
+						Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
+					},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
+
+					_, err, ok := next()
+
+					got, ok := err.(LexError)
+					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+				})
+			}
+		})
 	})
 }
