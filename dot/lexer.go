@@ -12,60 +12,50 @@ import (
 )
 
 type Lexer struct {
-	r    *bufio.Reader
-	cur  rune
-	next rune
-	eof  bool
+	r         *bufio.Reader
+	cur       rune
+	curLineNr int
+	curCharNr int
+	next      rune
+	eof       bool
 }
 
 func New(r io.Reader) *Lexer {
-	lexer := Lexer{r: bufio.NewReader(r)}
+	lexer := Lexer{
+		r:         bufio.NewReader(r),
+		curLineNr: 1,
+		// TODO is there a better way I can do this? That this is not within readChar feels like a
+		// hack/but I do not want every place that calls readRune() to also have to
+		// incrementPosition
+		curCharNr: -1,
+	}
 	return &lexer
 }
 
 type LexError struct {
-	Line      int    // Line number the error was found.
-	Character int    // Character number the error was found.
-	Reason    string // Reason for the error.
+	LineNr      int    // Line number the error was found.
+	CharacterNr int    // Character number the error was found.
+	Character   rune   // Character that caused the error.
+	Reason      string // Reason for the error.
 }
 
 func (le LexError) Error() string {
-	return fmt.Sprintf("%d:%d: %s", le.Line, le.Character, le.Reason)
+	return fmt.Sprintf("%d:%d: %s", le.LineNr, le.CharacterNr, le.Reason)
 }
 
-func (l *Lexer) readRune() error {
-	r, _, err := l.r.ReadRune()
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			return err
-		}
-
-		l.eof = true
-		l.cur = l.next
-		l.next = 0
-		return nil
-	}
-
-	l.cur = l.next
-	l.next = r
-	return nil
-}
-
+// TODO support comments (by discarding them)
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
 		// initialize current and next runes
 		err := l.readRune()
-		fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 		if errors.Is(err, io.EOF) {
 			return
 		}
 		err = l.readRune()
-		fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 		if errors.Is(err, io.EOF) {
 			return
 		}
-		fmt.Println("initialized")
 
 		for {
 			var tok token.Token
@@ -99,14 +89,18 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 			case '=':
 				tok, err = l.tokenizeRuneAs(token.Equal)
 			default:
-				if l.cur == '-' && (l.next == '>' || l.next == '-') {
+				if isEdgeOperator(l.cur, l.next) {
 					tok, err = l.tokenizeEdgeOperator()
-				} else {
+				} else if isStartofIdentifier(l.cur) {
 					tok, err = l.tokenizeIdentifier()
 					if !yield(tok, err) || l.eof {
 						return
 					}
-					continue
+					// TODO could I not advance past in tokenizeIdentifier to get rid of the
+					// continue here?
+					continue // as we do advance in tokenizeIdentifier we want to skip advancing at the end of the loop
+				} else {
+					err = l.lexError("invalid token")
 				}
 			}
 
@@ -123,6 +117,39 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 		// TODO handle illegal runes
 		// TODO handle error that is not io.EOF
 	}
+}
+
+func (l *Lexer) readRune() error {
+	r, _, err := l.r.ReadRune()
+	if err != nil {
+		if !errors.Is(err, io.EOF) {
+			fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+			return err
+		}
+
+		l.eof = true
+		if l.cur == '\n' {
+			l.curLineNr++
+			l.curCharNr = 1
+		} else {
+			l.curCharNr++
+		}
+		l.cur = l.next
+		l.next = 0
+		fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+		return nil
+	}
+
+	if l.cur == '\n' {
+		l.curLineNr++
+		l.curCharNr = 1
+	} else {
+		l.curCharNr++
+	}
+	l.cur = l.next
+	l.next = r
+	fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+	return nil
 }
 
 func (l *Lexer) skipWhitespace() (err error) {
@@ -150,19 +177,35 @@ func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
 	return token.Token{Type: tokenType, Literal: string(l.cur)}, nil
 }
 
+func isEdgeOperator(first, second rune) bool {
+	return first == '-' && (second == '>' || second == '-')
+}
+
 func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 	err := l.readRune()
+	if err != nil {
+		var tok token.Token
+		return tok, err
+	}
+
 	if l.cur == '-' {
 		return token.Token{Type: token.UndirectedEgde, Literal: token.UndirectedEgde}, err
 	}
 	return token.Token{Type: token.DirectedEgde, Literal: token.DirectedEgde}, err
 }
 
+func isStartofIdentifier(r rune) bool {
+	if r == '"' || // double-quoted string
+		r == '<' || // HTML string
+		r == '-' || r == '.' || unicode.IsDigit(r) || // numeral
+		isAlphabetic(r) || r == '_' { // any valid string
+		return true
+	}
+
+	return false
+}
+
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
-	// TODO should I move this into a func like isIdentifier and check that in the All() loop and
-	// direct to the illegal token case there right away?
-	// TODO should these read until whitespace/eof and check every rune for the valid set of runes
-	// in that particular category?
 	if l.cur == '"' { // double-quoted string
 		return l.tokenizeQuotedString()
 	} else if l.cur == '<' { // HTML string
@@ -171,10 +214,18 @@ func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 		return l.tokenizeNumeral()
 	} else if isAlphabetic(l.cur) || l.cur == '_' { // any valid string
 		return l.tokenizeUnquotedString()
-	} else {
-		// TODO invalid
-		var tok token.Token
-		return tok, errors.New("invalid token")
+	}
+
+	var tok token.Token
+	return tok, l.lexError("invalid token")
+}
+
+func (l *Lexer) lexError(reason string) LexError {
+	return LexError{
+		LineNr:      l.curLineNr,
+		CharacterNr: l.curCharNr,
+		Character:   l.cur,
+		Reason:      reason,
 	}
 }
 
@@ -250,6 +301,19 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 
 	// TODO validate every l.cur is a digit
 	id := []rune{l.cur}
+
+	if l.cur == '.' && !unicode.IsDigit(l.next) {
+		lexError := l.lexError("`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier")
+		// TODO I want to skip the illegal character but what would I do with this error?
+		err = l.readRune()
+		return tok, lexError
+	} else if l.cur == '-' && (l.next != '.' || !unicode.IsDigit(l.next)) {
+		lexError := l.lexError("`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier")
+		// TODO I want to skip the illegal character but what would I do with this error?
+		err = l.readRune()
+		return tok, lexError
+	}
+
 	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}

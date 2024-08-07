@@ -1,7 +1,6 @@
 package dot
 
 import (
-	"iter"
 	"strings"
 	"testing"
 
@@ -166,15 +165,46 @@ func TestLexer(t *testing.T) {
 	}
 
 	errorTests := map[string]struct {
-		in  string
-		err error
+		in   string
+		errs []*LexError
 	}{
 		"IdentifiersIllegal": { // https://graphviz.org/doc/info/lang.html#ids
-			in: ` ? `,
-			err: LexError{
-				Line:      1,
-				Character: 2,
-				Reason:    `want ... but got "?"`,
+			in: ` A  ?
+. D
+	E - F
+G > H
+`,
+			errs: []*LexError{
+				nil,
+				{
+					LineNr:      1,
+					CharacterNr: 5,
+					Character:   '?',
+					Reason:      "invalid token",
+				},
+				{
+					LineNr:      2,
+					CharacterNr: 1,
+					Character:   '.',
+					Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
+				},
+				nil,
+				nil,
+				{
+					LineNr:      3,
+					CharacterNr: 4,
+					Character:   '-',
+					Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
+				},
+				nil,
+				nil,
+				{
+					LineNr:      4,
+					CharacterNr: 3,
+					Character:   '>',
+					Reason:      "invalid token",
+				},
+				nil,
 			},
 		},
 	}
@@ -183,16 +213,17 @@ func TestLexer(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			lexer := New(strings.NewReader(test.in))
 
-			next, stop := iter.Pull2(lexer.All())
-			defer stop()
-
-			_, err, ok := next()
-
-			require.Truef(t, ok, "All() should yield one time")
-			assert.EqualValuesf(t, err, test.err, "All() should return an error")
-
-			_, _, ok = next()
-			require.Falsef(t, ok, "All() should yield exactly one time")
+			var i int
+			for _, err := range lexer.All() {
+				if test.errs[i] == nil {
+					assert.NoErrorf(t, err, "All(%q) at index %d", test.in, i)
+				} else {
+					got, ok := err.(LexError)
+					require.Truef(t, ok, "All(%q) at index %d wanted LexError, instead got %q", test.in, i, err)
+					assert.EqualValuesf(t, got, *test.errs[i], "All(%q) at index %d", test.in, i)
+				}
+				i++
+			}
 		})
 	}
 }
