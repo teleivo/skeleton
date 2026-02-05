@@ -1,4 +1,4 @@
-github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
-github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/teleivo/assertive v0.0.0-20240721115201-14cfbe36eec8 h1:gokdCJbzmARICj47WinQOS/nApROPonifHnlUHfcuec=
-github.com/teleivo/assertive v0.0.0-20240721115201-14cfbe36eec8/go.mod h1:y8DkSNXQ0sByZ/u5hfZKQHCJXh3T09JmJ/N4xYXe194=
+github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
+github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
+github.com/teleivo/assertive v0.0.1 h1:VU6sf1khxZOPli6GrBqYGVGUMEQZh8+eSkoxtkeG/ko=
+github.com/teleivo/assertive v0.0.1/go.mod h1:3OJs6SNs2BmP2FDFExFNfcxh0QODPkcl5yLutuJZlKY=
