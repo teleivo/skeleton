@@ -10,9 +10,10 @@
   from DeleteMin? With Min() you can Get() the value if needed, with DeleteMin() you could not
   * Keys(lo, hi key)
   * Backward()
-  * could I support keys that implement a `func Less(i, j int) bool` as in https://pkg.go.dev/sort#Interface keys as well while not making it awkward for
-  cmp.Ordered types? or maybe a https://pkg.go.dev/time#Time.Compare one as that also exists in
-  cmp.Ordered. It would be cool to be able to use time.Time as the key to some value
+  * support custom key types with a `Compare(T) int` method (like `time.Time`) using Go 1.26
+    self-referential generics: `type Comparer[T Comparer[T]] interface { Compare(T) int }`. This
+    avoids making the API awkward for `cmp.Ordered` types — could offer a separate `MapFunc` or use
+    a shared interface that both `cmp.Ordered` and custom types satisfy
   * how can I benchmark/test to make sure it is close to perfectly balanced?
   * Size() int
   * Size(lo, hi key)
